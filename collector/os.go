@@ -19,7 +19,7 @@ func GetOSInfo() (OSInfo, error) {
 	if err != nil {
 		return OSInfo{}, fmt.Errorf("lỗi khi đọc /etc/os-release: %w", err)
 	}
-	defer file.Close() // đảm bảo file luôn được đóng khi hàm kết thúc, dù có lỗi hay không
+	defer file.Close() // đảm bảo file luôn được đóng khMi hàm kết thúc, dù có lỗi hay không
 
 	var name, version string
 	scanner := bufio.NewScanner(file)
