@@ -21,6 +21,7 @@ func main() {
 // printPretty in kết quả dạng dễ đọc cho người dùng xem trực tiếp trên terminal
 func printPretty(info collector.SystemInfo) {
 	fmt.Println("=== System Scan Result ===")
+	fmt.Printf("OS        : %s %s (%s)\n", info.OS.Name, info.OS.Version, info.OS.Arch)
 	fmt.Printf("CPU cores : %d\n", info.CPUCores)
 	fmt.Printf("RAM total : %.1f GB\n", info.RAMTotalGB)
 	fmt.Println()
