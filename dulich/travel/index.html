@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Việt Nam Quest</title>
+<meta name="description" content="Lên lịch phượt khắp Việt Nam: thêm các điểm muốn đi, app tự sắp thứ tự đường đi hợp lý, chia theo ngày và vẽ bản đồ. Xem lại như một chuyến phiêu lưu có sổ hộ chiếu.">
+<meta name="theme-color" content="#20245e">
+<meta property="og:title" content="Việt Nam Quest">
+<meta property="og:description" content="Thêm điểm muốn đi, app tự sắp thứ tự, chia ngày và vẽ bản đồ cho chuyến phượt.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M4 58 C12 30 20 10 30 8 C38 10 44 30 60 58 Z' fill='%234f8f68'/%3E%3Ccircle cx='46' cy='16' r='9' fill='%23ff4f9a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=Patrick+Hand&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style>
+:root{
+  --ink:#1d2160;--night:#20245e;--paper:#fff;--pink:#ff4f9a;--teal:#11b3ae;--sun:#ffc531;--orange:#ff8a1f;--red:#e8423f;--violet:#7a6cf0;--muted:#5b5f8f;
+  --font-display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --font-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-hand:"Patrick Hand","Comic Sans MS",cursive;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{background:var(--night)}
+[hidden]{display:none!important}
+body{margin:0;min-height:100vh;color:#fff;font-family:var(--font-body);font-size:15px;line-height:1.55;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.06' stroke-width='2'%3E%3Cpath d='M32 6 L58 32 L32 58 L6 32 Z'/%3E%3Cpath d='M32 18 L46 32 L32 46 L18 32 Z'/%3E%3Cpath d='M32 26 v12 M26 32 h12'/%3E%3C/g%3E%3C/svg%3E")}
+button,input,select{font:inherit}
+.wrap{max-width:1360px;margin:0 auto;padding-inline:16px;padding-block:18px 40px}
+.display{font-family:var(--font-display)}
+.min-w-0{min-width:0}
+
+/* chunky game UI (same language as Hà Giang Quest) */
+.chunk{background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:20px;box-shadow:6px 6px 0 rgba(10,12,40,.55)}
+.btn{font-family:var(--font-display);font-weight:800;font-size:15px;line-height:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 14px 8px;border:3px solid var(--ink);border-radius:14px;background:#fff;color:var(--ink);text-decoration:none;
+  box-shadow:0 4px 0 var(--ink);transition:transform .12s,box-shadow .12s;cursor:pointer;white-space:nowrap}
+.btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 var(--ink)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:0 4px 0 var(--ink)}
+.btn:focus-visible,.xbtn:focus-visible,.iconbtn:focus-visible,input:focus-visible,select:focus-visible,.logrow:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.btn-pink{background:var(--pink);color:#fff}
+.btn-sun{background:var(--sun)}
+.btn-sm{font-size:13px;padding:8px 11px 6px;box-shadow:0 3px 0 var(--ink)}
+.btn-block{width:100%}
+.title-main{font-family:var(--font-display);font-weight:800;font-size:clamp(34px,5vw,54px);line-height:.95;letter-spacing:-.5px;margin:4px 0 0;
+  color:#fff;text-shadow:3px 3px 0 var(--pink),6px 6px 0 rgba(10,12,40,.6)}
+.title-main span{color:var(--sun)}
+.eyebrow{font-family:var(--font-display);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:12px;color:var(--sun)}
+.lead{margin:8px 0 0;color:#c7cbff;max-width:62ch}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+.trips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.trips select{min-width:0;max-width:min(320px,100%);font-family:var(--font-display);font-weight:800;font-size:15px;color:var(--ink);
+  padding:9px 12px 7px;border:3px solid var(--ink);border-radius:14px;background:#fff;box-shadow:0 4px 0 var(--ink)}
+
+/* layout: map + passport on the left, editor on the right */
+.layout{display:grid;gap:22px;grid-template-columns:minmax(0,1fr) 390px;grid-template-areas:"map edit" "plan edit";align-items:start}
+.area-map{grid-area:map}.area-edit{grid-area:edit}.area-plan{grid-area:plan}
+@media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr);grid-template-areas:"map" "edit" "plan"}}
+.mapcard{overflow:hidden;padding:0}
+#map{height:min(62vh,580px);min-height:320px;background:#cfe8c0}
+.mapbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 14px;border-top:3px solid var(--ink);background:#fff6d6}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;font-weight:700;color:var(--ink)}
+.legend i{display:inline-block;width:20px;height:6px;border-radius:4px;margin-right:6px;vertical-align:middle}
+.hint{font-size:12px;color:var(--muted);margin:0}
+
+/* editor */
+.panel{padding:18px;display:flex;flex-direction:column;gap:14px}
+.panel h2,.panel h3{font-family:var(--font-display);font-weight:800;line-height:1;margin:0}
+.panel h2{font-size:22px}
+.panel h3{font-size:18px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label,.flabel{font-family:var(--font-display);font-weight:700;font-size:13px;color:var(--muted)}
+.inp{width:100%;min-width:0;padding:9px 11px;border:2.5px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);font-size:15px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:14px;font-weight:600;cursor:pointer}
+.check input{width:18px;height:18px;margin-top:2px;accent-color:var(--pink);flex:none}
+.sep{height:0;border-top:2px dashed #d9dbf0;margin:2px 0}
+
+/* search */
+.search{position:relative}
+.results{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:1200;margin:0;padding:6px;list-style:none;background:#fff;
+  border:3px solid var(--ink);border-radius:14px;box-shadow:0 6px 0 rgba(10,12,40,.35);max-height:320px;overflow:auto}
+.results li{padding:8px 10px;border-radius:10px;cursor:pointer;line-height:1.3}
+.results li[aria-selected="true"],.results li:hover{background:#fff0f7}
+.results b{display:block;font-size:14px}
+.results small{display:block;font-size:12px;color:var(--muted)}
+.results .empty{cursor:default;color:var(--muted);font-size:13px}
+
+/* stops */
+.stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.stop{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px;border:2px solid #e3e5f5;border-radius:14px;background:#fbfbff}
+.stop.start{border-color:var(--ink);background:#fff6d6}
+.num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-display);font-weight:800;font-size:13px;color:#fff;background:var(--violet);border:2.5px solid var(--ink);transform:rotate(-8deg)}
+.stop .nm{font-weight:700;font-size:14px;line-height:1.25;overflow-wrap:anywhere}
+.stop .sb{font-size:12px;color:var(--muted);line-height:1.3;overflow-wrap:anywhere}
+.stop .tag{display:inline-block;font-family:var(--font-display);font-weight:800;font-size:11px;padding:2px 8px 0;border-radius:999px;background:var(--sun);border:2px solid var(--ink);margin-bottom:2px}
+.stop .ctl{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;align-items:center}
+.stop .opts{grid-column:2 / 4;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.stop select{padding:4px 6px;border:2px solid var(--ink);border-radius:9px;background:#fff;color:var(--ink);font-size:13px}
+.iconbtn{width:30px;height:30px;display:grid;place-items:center;border:2px solid var(--ink);border-radius:9px;background:#fff;color:var(--ink);cursor:pointer;font-size:14px;line-height:1;padding:0}
+.iconbtn:disabled{opacity:.3;cursor:not-allowed}
+.nightbtn{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border:2px solid var(--ink);border-radius:9px;background:#fff;color:var(--ink);cursor:pointer;font-size:12px;font-weight:700}
+.nightbtn[aria-pressed="true"]{background:var(--night);color:#fff}
+.emptystops{font-size:14px;color:var(--muted);margin:0;padding:12px;border:2px dashed #d9dbf0;border-radius:14px;text-align:center}
+
+/* passport (itinerary) — same look as the Hà Giang Quest passport */
+.passhead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-display);font-weight:800;font-size:13px;line-height:1;padding:6px 10px 4px;border-radius:999px;border:2px solid var(--ink);background:#eef0ff;color:var(--ink)}
+.banner{font-size:13px;font-weight:600;border-radius:12px;padding:9px 12px;border:2px solid var(--ink);background:#fff0f7;color:var(--ink)}
+.banner.warn{background:#fff6d6}
+.log{display:flex;flex-direction:column}
+.logday{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;justify-content:space-between;font-family:var(--font-display);font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin:16px 0 4px;color:var(--dc,var(--muted))}
+.logday:first-child{margin-top:4px}
+.logday .sum{letter-spacing:0;text-transform:none;font-weight:700;color:var(--muted);font-size:12px}
+.logday .sum.over{color:var(--red)}
+.logrow{width:100%;display:grid;grid-template-columns:38px 86px minmax(0,1fr);gap:8px;align-items:center;text-align:left;
+  padding:6px 8px;border-radius:12px;border:2px solid transparent;background:transparent;color:var(--ink);cursor:pointer;font:inherit}
+.logrow:hover{background:#f3f4ff}
+.logrow.current{background:#fff6d6;border-color:var(--ink)}
+.logrow .t{font-family:var(--font-display);font-weight:700;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.2}
+.logrow .n{font-weight:600;font-size:14px;line-height:1.25;min-width:0;overflow-wrap:anywhere}
+.logrow .n small{display:block;font-weight:500;font-size:12px;color:var(--muted)}
+.stamp{position:relative;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-display);font-weight:800;font-size:14px;
+  border:2.5px solid var(--ink);color:#fff;background:var(--sc,var(--pink));transform:rotate(-8deg)}
+.log.stamping .logrow:not(.done) .stamp{border:2.5px dashed #b9bce0;color:#9a9dc8;background:#fff}
+.logleg{display:grid;grid-template-columns:38px 86px minmax(0,1fr);gap:8px;align-items:center;padding:1px 10px;color:var(--muted);font-size:12.5px}
+.logleg .ic{width:34px;display:grid;place-items:center;font-size:15px}
+.logleg .t{font-family:var(--font-display);font-weight:700;font-variant-numeric:tabular-nums}
+.logleg .n{font-style:italic;line-height:1.3}
+.lognight{margin:6px 0 0;padding:7px 12px;border-radius:12px;background:#20245e;color:#fff;font-size:13px;font-weight:600}
+.daylinks{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 2px 46px}
+.gmap{font-size:12.5px;font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.progress{height:14px;border-radius:999px;border:2.5px solid var(--ink);background:#eef0ff;overflow:hidden}
+.progress > div{height:100%;background:repeating-linear-gradient(-45deg,var(--pink) 0 10px,#ff7ab4 10px 20px);width:0;transition:width .6s cubic-bezier(.3,1.4,.5,1)}
+
+/* leaflet markers */
+.pin{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-display);font-weight:800;font-size:13px;color:#fff;
+  border:3px solid var(--ink);box-shadow:0 3px 0 rgba(10,12,40,.45);background:var(--pc,#9a9dc8)}
+.pin.start{background:var(--ink);color:var(--sun)}
+.leaflet-container{font-family:var(--font-body)}
+.leaflet-popup-content{margin:10px 12px;color:var(--ink);font-size:13px;line-height:1.4}
+.leaflet-popup-content b{font-family:var(--font-display);font-size:15px}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:3000;max-width:calc(100% - 32px);
+  background:var(--ink);color:#fff;border:3px solid #fff;border-radius:14px;padding:10px 14px;font-weight:600;font-size:14px;box-shadow:0 6px 0 rgba(0,0,0,.35)}
+
+/* ---------- Quest view ---------- */
+.quest{position:fixed;inset:0;z-index:2000;overflow:auto;background:var(--night);
+  background-image:inherit;padding-inline:16px;padding-block:max(16px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-bottom,0px))}
+.quest .qwrap{max-width:1360px;margin:0 auto}
+.qtop{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.xbtn{flex:none;width:42px;height:42px;border-radius:12px;border:3px solid var(--ink);background:#fff;color:var(--ink);font:800 18px/1 var(--font-display);cursor:pointer;box-shadow:0 3px 0 var(--ink)}
+.qgrid{display:grid;gap:22px;grid-template-columns:minmax(0,1fr) 370px;align-items:start}
+@media (max-width:980px){.qgrid{grid-template-columns:minmax(0,1fr)}}
+.qmap{position:relative;overflow:hidden;padding:0}
+.qscroll{overflow-x:auto;border-radius:17px 17px 0 0}
+#qsvg{display:block;width:100%;min-width:680px;height:auto;background:#a8d86e}
+.qcard{padding:18px;display:flex;flex-direction:column;gap:10px}
+.qcard .ttl{font-family:var(--font-display);font-weight:800;font-size:26px;line-height:1.05;margin:0}
+.daychip{display:inline-flex;font-family:var(--font-display);font-weight:800;font-size:13px;padding:5px 11px 3px;border-radius:999px;color:#fff;border:2px solid var(--ink)}
+.greet{font-family:var(--font-hand);font-size:20px;line-height:1.2;background:#fff0f7;border:2.5px solid var(--ink);border-radius:16px 16px 16px 4px;padding:8px 12px;color:var(--ink)}
+.qlog{max-height:420px;overflow:auto;padding-right:4px}
+.finale{position:absolute;inset:0;display:grid;place-items:center;background:rgba(20,22,70,.55);padding:16px}
+.finale .card{max-width:420px;text-align:center;padding:24px 22px}
+.walking .leg-l{animation:step .34s ease-in-out infinite alternate}
+.bob{animation:bob .5s ease-in-out infinite alternate}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-3px)}}
+.qpulse{transform-box:fill-box;transform-origin:center;animation:pulse 1.4s ease-out infinite}
+@keyframes pulse{from{transform:scale(.6);opacity:.9}to{transform:scale(2.1);opacity:0}}
+@media (prefers-reduced-motion: reduce){.bob,.qpulse{animation:none}.btn{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="min-w-0">
+      <div class="eyebrow">Lên lịch phượt · bản đồ mở OpenStreetMap</div>
+      <h1 class="title-main">Việt Nam <span>Quest</span></h1>
+      <p class="lead">Thêm những điểm muốn đi, app tự sắp thứ tự cho đỡ vòng vèo, chia theo ngày và vẽ bản đồ. Xong thì xem lại như một chuyến phiêu lưu có sổ hộ chiếu.</p>
+    </div>
+    <div class="trips">
+      <label for="tripSel" class="eyebrow" style="width:100%">Chuyến đi</label>
+      <select id="tripSel" aria-label="Chọn chuyến đi"></select>
+      <button class="btn btn-sm" id="newBtn" type="button">+ Chuyến mới</button>
+      <button class="btn btn-sm" id="shareBtn" type="button">Chia sẻ</button>
+      <button class="btn btn-sm" id="delBtn" type="button">Xóa</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="chunk mapcard area-map" aria-label="Bản đồ chuyến đi">
+      <div id="map"></div>
+      <div class="mapbar">
+        <div class="legend" id="legend"><span class="hint">Bấm lên bản đồ để thêm điểm ngay tại chỗ đó.</span></div>
+        <button class="btn btn-pink" id="questBtn" type="button" disabled>🏔️ Xem kiểu Quest</button>
+      </div>
+    </section>
+
+    <aside class="chunk panel area-edit" aria-label="Lên kế hoạch">
+      <div class="field">
+        <label for="tripName">Tên chuyến</label>
+        <input class="inp" id="tripName" maxlength="80" autocomplete="off">
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="tripDate">Ngày bắt đầu</label><input class="inp" type="date" id="tripDate"></div>
+        <div class="field"><label for="tripDays">Số ngày</label><input class="inp" type="number" id="tripDays" min="1" max="30" step="1"></div>
+        <div class="field"><label for="dayStart">Xuất phát mỗi sáng</label><input class="inp" type="time" id="dayStart" step="900"></div>
+        <div class="field"><label for="maxDrive">Chạy xe tối đa / ngày</label>
+          <select class="inp" id="maxDrive"><option value="3">3 tiếng</option><option value="4">4 tiếng</option><option value="5">5 tiếng</option><option value="6">6 tiếng</option><option value="7">7 tiếng</option><option value="8">8 tiếng</option></select></div>
+      </div>
+      <div class="field"><label for="terrain">Địa hình (để ước tính giờ chạy xe)</label>
+        <select class="inp" id="terrain"><option value="plain">Đồng bằng, đường lớn</option><option value="mountain">Miền núi, đèo dốc (chậm gần gấp đôi)</option></select></div>
+      <div class="field"><label for="endMode">Kết thúc chuyến</label>
+        <select class="inp" id="endMode"><option value="free">Kết thúc ở điểm cuối cùng</option><option value="loop">Quay về điểm xuất phát</option></select></div>
+      <label class="check"><input type="checkbox" id="optimize"><span>Tự sắp xếp thứ tự đi cho đỡ vòng vèo<br><small style="color:var(--muted);font-weight:500">Tắt đi nếu muốn giữ đúng thứ tự trong danh sách.</small></span></label>
+
+      <div class="sep"></div>
+      <h2>Điểm đến</h2>
+      <div class="search">
+        <label for="q" class="flabel">Tìm địa điểm để thêm</label>
+        <input class="inp" id="q" type="search" placeholder="Ví dụ: Cột cờ Lũng Cú, Sapa, Hồ Gươm…" autocomplete="off"
+          role="combobox" aria-expanded="false" aria-controls="results" aria-autocomplete="list">
+        <ul class="results" id="results" role="listbox" hidden></ul>
+      </div>
+      <ul class="stops" id="stops" aria-label="Danh sách điểm đến"></ul>
+      <button class="btn btn-pink btn-block" id="planBtn" type="button">✨ Lên lịch trình</button>
+      <p class="hint" id="planHint">Điểm đầu tiên trong danh sách là điểm xuất phát. Bấm 🌙 để chọn chỗ ngủ cố định.</p>
+    </aside>
+
+    <section class="chunk panel area-plan" aria-label="Sổ hộ chiếu lịch trình" id="planCard">
+      <div class="passhead">
+        <h2>Sổ hộ chiếu lịch trình</h2>
+        <div class="chips" id="planChips"></div>
+      </div>
+      <div id="planBanners"></div>
+      <div class="log" id="planLog"><p class="hint">Thêm điểm rồi bấm “Lên lịch trình”, lịch từng ngày sẽ hiện ở đây.</p></div>
+    </section>
+  </main>
+  <p class="hint" style="color:#aab0e6;margin-top:22px">Dữ liệu bản đồ © OpenStreetMap contributors · tìm địa điểm: Photon · tính đường: OSRM. Giờ chạy xe chỉ là ước tính, nên cộng thêm thời gian dự phòng.</p>
+</div>
+
+<!-- Quest view -->
+<div class="quest" id="quest" role="dialog" aria-modal="true" aria-labelledby="qTitle" hidden>
+  <div class="qwrap">
+    <div class="qtop">
+      <div class="min-w-0"><div class="eyebrow">Bản đồ phiêu lưu</div><h2 class="title-main" id="qTitle" style="font-size:clamp(28px,4vw,46px)"></h2></div>
+      <button class="xbtn" id="qClose" type="button" aria-label="Đóng chế độ Quest">✕</button>
+    </div>
+    <div class="qgrid">
+      <section class="chunk qmap" aria-label="Bản đồ phiêu lưu">
+        <div class="qscroll" id="qScroll"><svg id="qsvg" viewBox="0 0 1200 800" role="img" aria-label="Bản đồ hành trình"></svg></div>
+        <div class="mapbar">
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <button class="btn" id="qPrev" type="button">‹ Trước</button>
+            <button class="btn btn-sun" id="qAuto" type="button" aria-pressed="false">▶ Tự động</button>
+            <button class="btn btn-pink" id="qNext" type="button">Đi tiếp ›</button>
+          </div>
+          <div class="legend" id="qLegend"></div>
+        </div>
+        <div class="finale" id="qFinale" hidden>
+          <div class="chunk card">
+            <div class="eyebrow" style="color:var(--pink)">Hoàn thành hành trình</div>
+            <h3 class="display" style="font-size:32px;line-height:1;margin:6px 0 0" id="qFinTitle"></h3>
+            <p style="margin:12px 0 0" id="qFinText"></p>
+            <p style="font-family:var(--font-hand);font-size:22px;color:var(--pink);margin:8px 0 0">Thượng lộ bình an!</p>
+            <button class="btn btn-pink" id="qReplay" type="button" style="margin-top:14px">Đi lại từ đầu</button>
+          </div>
+        </div>
+      </section>
+      <aside style="display:flex;flex-direction:column;gap:20px;min-width:0">
+        <article class="chunk qcard" aria-live="polite">
+          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+            <span class="daychip" id="qDay"></span><span class="chip" id="qTime"></span>
+            <span style="margin-left:auto;font-size:12px;font-weight:600;color:var(--muted)" id="qCount"></span>
+          </div>
+          <h3 class="ttl" id="qName"></h3>
+          <p style="margin:0;font-size:14px;color:var(--muted)" id="qSub"></p>
+          <div class="greet" id="qGreet"></div>
+          <p style="margin:0;font-size:14px" id="qInfo"></p>
+        </article>
+        <section class="chunk qcard">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+            <h3 class="display" style="margin:0;font-size:20px;line-height:1">Sổ hộ chiếu</h3>
+            <span class="display" style="font-weight:700;font-size:14px;color:var(--muted)" id="qStamps"></span>
+          </div>
+          <div class="progress" aria-hidden="true"><div id="qBar"></div></div>
+          <div class="log stamping qlog" id="qLog"></div>
+        </section>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="app.js"></script>
+<script src="quest.js"></script>
+</body>
+</html>
