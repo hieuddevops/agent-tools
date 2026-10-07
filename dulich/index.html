@@ -1153,8 +1153,15 @@ function carTimeline(o){
   on(.2,()=>caption(`${o.dep<18*60?'Chiều':'Tối'} thứ 7 · ${o.spot||o.name}`));
   t.to(clk,{m:o.dep,duration:10.8,ease:'none',onUpdate:()=>renderClock(clk.m)},0);
   on(.2,()=>E.duo.classList.add('walking'));
-  t.to(E.duo,{x:920,duration:2.4,ease:'none'},.2);
+  t.to(E.duo,{x:M?860:920,duration:2.4,ease:'none'},.2);
   on(2.6,()=>E.duo.classList.remove('walking'));
+  /* Hà Nội pickup: the Hà Tĩnh pair, just off their bus, joins them before the car arrives */
+  if(M){
+    on(1.6,()=>{G.set(E.duo2,{x:1400,opacity:1});E.duo2.classList.add('walking');caption(`2 bạn từ ${M.name} vừa ra tới bến Mỹ Đình`);});
+    t.to(E.duo2,{x:1080,duration:1.6,ease:'none'},1.6);
+    on(3.2,()=>{E.duo2.classList.remove('walking');E.d2Girl.classList.add('waving');say(1080,480,`Bọn tớ từ ${M.name} ra rồi đây!`,1.1);});
+    on(4.6,()=>E.d2Girl.classList.remove('waving'));
+  }
   /* the phone call (girl's free hand) */
   on(2.9,()=>{E.dGirl.classList.add('calling');Snd.ring();phoneShow();});
   on(3.9,()=>{phoneConnected();phoneLine('me','Alo anh ơi, xe sắp tới chưa ạ?');say(884,480,'Alo anh ơi, xe sắp tới chưa ạ?',1.4);});
@@ -1242,8 +1249,8 @@ function carTimeline(o){
   }
   /* Hà Nội pickup: the Hà Tĩnh pair just got off their bus and walks in */
   if(M){
-    on(D1,()=>{caption(`2 bạn từ ${M.name} vừa ra tới bến Mỹ Đình`);G.set(E.duo2,{x:1400,opacity:1});});
-    boardFriends(t,D1,560,1180,`Bọn tớ từ ${M.name} ra rồi đây!`);
+    on(D1,()=>caption(`Đón nốt 2 bạn ${M.name} lên xe`));
+    boardFriends(t,D1,560,1080,'Đợi bọn tớ với!');
   }
   const D0=V?D1+14.4:M?D1+5.6:D1,DUR=15;
   on(D0,()=>{caption(V?`${V.depLabel} · Xe giường nằm lên đường đi Hà Giang!`:`${o.depLabel} · Lên đường!`);E.car.classList.add('driving');Snd.engineStart();
