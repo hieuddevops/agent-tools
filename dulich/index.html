@@ -192,6 +192,11 @@ body{
 .stamp{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-display);font-weight:800;font-size:14px;
   border:2.5px dashed #b9bce0;color:#9a9dc8;background:#fff;transform:rotate(-8deg)}
 .logrow.done .stamp{border:2.5px solid var(--ink);color:#fff;background:var(--sc,var(--pink))}
+/* bus legs between stamps (e.g. the Hà Nội change-over): shown in the log, not stamped */
+.logleg{display:grid;grid-template-columns:38px 64px minmax(0,1fr);gap:8px;align-items:center;padding:2px 10px;color:var(--muted)}
+.logleg .bus{width:34px;display:grid;place-items:center;font-size:16px}
+.logleg .t{font-family:var(--font-display);font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
+.logleg .n{font-size:13px;line-height:1.3;font-style:italic}
 .progress{height:14px;border-radius:999px;border:2.5px solid var(--ink);background:#eef0ff;overflow:hidden}
 .progress > div{height:100%;background:repeating-linear-gradient(-45deg,var(--pink) 0 10px,#ff7ab4 10px 20px);width:0;transition:width .6s cubic-bezier(.3,1.4,.5,1)}
 
@@ -331,7 +336,7 @@ img{max-width:100%}
         </button>
         <button class="city" type="button" data-origin="ht">
           <svg viewBox="0 0 120 52" aria-hidden="true"><path d="M4,34 H116 V48 H4 Z" fill="#11b3ae"/><path d="M4,48 H116" stroke="#1d2160" stroke-width="4"/><path d="M8,41 q5,-3 10,0 t10,0 M44,44 q5,-3 10,0 t10,0" stroke="#fff" stroke-width="2" fill="none"/><path d="M14,24 Q34,4 54,24 M66,24 Q86,4 106,24" stroke="#ff4f9a" stroke-width="3.2" fill="none"/><path d="M24,23 V13 M34,23 V9 M44,23 V13 M76,23 V13 M86,23 V9 M96,23 V13" stroke="#ff4f9a" stroke-width="1.6"/><path d="M4,24 H116" stroke="#1d2160" stroke-width="4"/><path d="M10,24 V36 M60,24 V36 M110,24 V36" stroke="#1d2160" stroke-width="4"/><path d="M76,40 H100 L95,46 H81 Z" fill="#ffc531" stroke="#1d2160" stroke-width="2"/><path d="M86,40 V30 L95,38 Z" fill="#fff" stroke="#1d2160" stroke-width="1.6"/></svg>
-          <span class="cn">Đức Thọ · Hà Tĩnh</span><span class="cm">Bên sông La Giang · ~610 km · đổi xe ở Hà Nội</span><span class="cd">Xe đón 14:00</span>
+          <span class="cn">Đức Thọ · Hà Tĩnh</span><span class="cm">Ga Yên Trung · sông La Giang · ~610 km · đổi xe ở Hà Nội</span><span class="cd">Xe đón 14:00</span>
         </button>
       </div>
       <div class="flex flex-wrap justify-center gap-3 mt-6">
@@ -767,7 +772,7 @@ function updatePanel(i,animated){
 function updateControls(){
   $('prevBtn').disabled=moving||cur===0;
   $('nextBtn').disabled=moving;
-  $('nextLabel').textContent=cur===LAST?'Lên xe về Hà Nội':cur===0?'Xuất phát':'Đi tiếp';
+  $('nextLabel').textContent=cur===LAST?`Lên xe về ${origin.via?origin.via.name:origin.name}`:cur===0?'Xuất phát':'Đi tiếp';
   $('autoBtn').setAttribute('aria-pressed',auto?'true':'false');
   $('icoPlay').hidden=auto;$('icoPause').hidden=!auto;$('autoLabel').textContent=auto?'Tạm dừng':'Tự động';
 }
@@ -862,8 +867,8 @@ window.addEventListener('resize',()=>{const n=NODES[STOPS[cur].node];follow(n.x)
    ===================================================================== */
 const ORIGINS={
   hn:{key:'hn',name:'Hà Nội',km:300,dep:22*60,depLabel:'22:00',sign:'Hà Nội ~300 km',from:'Hà Nội',signTop:'HÀ NỘI'},
-  ht:{key:'ht',name:'Đức Thọ',km:610,dep:14*60,depLabel:'14:00',via:{name:'Hà Nội',km:310,arr:20*60,dep:22*60,depLabel:'22:00'},sign:'Đức Thọ ~610 km',from:'Đức Thọ',signTop:'ĐỨC THỌ · HÀ TĨNH',home:'khoảng 3h sáng thứ 4',
-    blurb:'Xe khách đón hai bạn bên sông La Giang (Đức Thọ, Hà Tĩnh) lúc 14:00 chiều thứ 7, chạy khoảng 310 km ra Hà Nội (tầm 6 tiếng), tới bến Mỹ Đình khoảng 20:00. Ăn tối rồi lên xe giường nằm 22:00, chạy xuyên đêm 300 km nữa, rạng sáng là tới Hà Giang.',
+  ht:{key:'ht',name:'Đức Thọ',km:610,dep:14*60,depLabel:'14:00',via:{name:'Hà Nội',km:310,arr:20*60,dep:22*60,depLabel:'22:00'},spot:'Ga Yên Trung, Đức Thọ',sign:'Đức Thọ ~610 km',from:'Đức Thọ',signTop:'ĐỨC THỌ · HÀ TĨNH',home:'khoảng 3h sáng thứ 4',
+    blurb:'Xe khách đón hai bạn trước ga Yên Trung (thị trấn Đức Thọ, Hà Tĩnh) lúc 14:00 chiều thứ 7, qua cầu sông La Giang sang Nghệ An rồi chạy khoảng 310 km ra Hà Nội (tầm 6 tiếng), tới bến Mỹ Đình khoảng 20:00. Ăn tối rồi lên xe giường nằm 22:00, chạy xuyên đêm 300 km nữa, rạng sáng là tới Hà Giang.',
     tip:'Đặt trước cả hai chặng, chặng Hà Nội – Hà Giang chọn nhà xe đón ở Mỹ Đình cho đỡ phải di chuyển. Chiều về: xe Hà Giang 12:30–13:00 về Hà Nội tầm 19h–20h, rồi bắt xe đêm 21:00–22:00 về Đức Thọ.',
     back:'Chiều về 2 chặng: trả xe, ăn trưa, lên xe 12:30–13:00 từ Hà Giang về Hà Nội (tới bến Mỹ Đình tầm 19h–20h), ăn tối rồi bắt xe đêm 21:00–22:00 từ Hà Nội về Đức Thọ, Hà Tĩnh, tới nhà khoảng 3h sáng thứ 4.'}
 };
@@ -878,11 +883,20 @@ function applyOrigin(o){
   $('finaleText').textContent=o.via
     ?`18 con dấu, 3 ngày 2 đêm trên cao nguyên đá. Chiều về Hà Giang → ${o.via.name} → ${o.name}, tới nhà ${o.home}.`
     :'18 con dấu, 3 ngày 2 đêm trên cao nguyên đá, kịp về nhà tối thứ 3 khoảng 19h–20h.';
-  Object.assign(STOPS[0],{time:o.depLabel,title:`Xuất phát từ ${o.name}`,
+  Object.assign(STOPS[0],{time:o.depLabel,title:`Xuất phát từ ${o.spot||o.name}`,
     blurb:o.blurb||`Xe đón hai bạn lúc ${o.depLabel} tối thứ 7, chạy xuyên đêm khoảng ${o.km} km, rạng sáng là tới Hà Giang.`,
     tip:o.tip||'Chốt luôn giờ về 12:30–13:00 thứ 3 để kịp về nhà tối.'});
   STOPS[LAST].blurb=o.back||`Trả xe, ăn trưa, lên xe khoảng 12:30–13:00, về tới ${o.name} tầm 19h–20h.`;
   rows[0].querySelector('.t').textContent=STOPS[0].time;rows[0].querySelector('.n').textContent=STOPS[0].title;
+  /* bus legs through Hà Nội in the log */
+  logEl.querySelectorAll('.logleg').forEach(e=>e.remove());
+  const leg=(after,time,text)=>{const d=document.createElement('div');d.className='logleg';
+    d.innerHTML=`<span class="bus" aria-hidden="true">🚌</span><span class="t">${time}</span><span class="n">${text}</span>`;after.after(d);return d;};
+  if(o.via){
+    leg(rows[0],'20:00',`Tới bến Mỹ Đình, ${o.via.name} · ăn tối, ${o.via.depLabel} đổi sang xe giường nằm đi Hà Giang`);
+    const l2=leg(rows[LAST],'19:00–20:00',`Về tới ${o.via.name} · ăn tối, bắt xe đêm 21:00–22:00 về ${o.name}`);
+    leg(l2,'~3:00 T4',`Về tới ${o.name}, Hà Tĩnh`);
+  }
   if(cur===0||cur===LAST)updatePanel(cur,false);
 }
 
@@ -965,7 +979,7 @@ function buildScene(o){
   let far=skylineSvg(r,-900,1450,472,'f-far').replace(/opacity="0"/g,'');
   if(o.key==='ht'){
     /* bridge over the La Giang river (Đức Thọ), bamboo on the dyke, a small boat */
-    far+=`<g transform="translate(1760,472)" class="f-far"><rect x="-300" y="-14" width="600" height="14" opacity=".55"/><rect x="-300" y="-58" width="600" height="10"/><path d="M-260,-58 Q-130,-150 0,-58 H-14 Q-130,-134 -246,-58 Z M0,-58 Q130,-150 260,-58 H246 Q130,-134 14,-58 Z"/><rect x="-266" y="-50" width="14" height="50"/><rect x="-7" y="-50" width="14" height="50"/><rect x="252" y="-50" width="14" height="50"/><path d="M-195,-58 V-96 M-130,-58 V-112 M-65,-58 V-96 M65,-58 V-96 M130,-58 V-112 M195,-58 V-96" class="s-far" fill="none" stroke-width="4"/><path d="M80,-22 H150 L138,-8 H92 Z M112,-22 V-52 L136,-26 Z"/><ellipse cx="-380" cy="-30" rx="46" ry="34"/><ellipse cx="-330" cy="-44" rx="34" ry="44"/><ellipse cx="370" cy="-36" rx="40" ry="40"/></g>`;
+    far+=`<g class="leg1"><g transform="translate(1300,472)" class="f-far"><rect x="-300" y="-14" width="600" height="14" opacity=".55"/><rect x="-300" y="-58" width="600" height="10"/><path d="M-260,-58 Q-130,-150 0,-58 H-14 Q-130,-134 -246,-58 Z M0,-58 Q130,-150 260,-58 H246 Q130,-134 14,-58 Z"/><rect x="-266" y="-50" width="14" height="50"/><rect x="-7" y="-50" width="14" height="50"/><rect x="252" y="-50" width="14" height="50"/><path d="M-195,-58 V-96 M-130,-58 V-112 M-65,-58 V-96 M65,-58 V-96 M130,-58 V-112 M195,-58 V-96" class="s-far" fill="none" stroke-width="4"/><path d="M80,-22 H150 L138,-8 H92 Z M112,-22 V-52 L136,-26 Z"/><ellipse cx="-380" cy="-30" rx="46" ry="34"/><ellipse cx="-330" cy="-44" rx="34" ry="44"/><ellipse cx="370" cy="-36" rx="40" ry="40"/></g></g>`;
   } else {
     far+=`<rect x="1460" y="428" width="620" height="8" class="f-far"/>`;
     let tr='M1460,428';for(let bx=1460;bx<2080;bx+=40)tr+=` L${bx+20},398 L${bx+40},428`;
@@ -981,7 +995,19 @@ function buildScene(o){
   [120,560,1000,1440,1880,2320].forEach(lx=>{mid+=`<g><rect x="${lx-3}" y="300" width="6" height="170" class="f-mid"/><path d="M${lx},306 q0,-16 28,-16 h8" fill="none" class="s-mid" stroke-width="5"/><circle class="glow" cx="${lx+38}" cy="300" r="74" fill="url(#glowG)"/><rect class="glow" x="${lx+29}" y="292" width="18" height="8" rx="3" fill="#ffe7a3"/></g>`;});
   const sign=(sx,t1,t2,c,w)=>{w=w||188;return `<g transform="translate(${sx},468)"><rect x="-3" y="-120" width="6" height="120" class="f-mid"/><rect x="${w-31}" y="-120" width="6" height="120" class="f-mid"/><rect x="-14" y="-176" width="${w}" height="62" rx="8" fill="${c||'#1f7a4d'}" stroke="#fff" stroke-width="3"/><text x="${w/2-14}" y="-151" text-anchor="middle" font-family="Baloo 2, sans-serif" font-weight="800" font-size="20" fill="#fff">${t1}</text><text x="${w/2-14}" y="-128" text-anchor="middle" font-family="Be Vietnam Pro, sans-serif" font-weight="700" font-size="14" fill="#fff">${t2}</text></g>`;};
   const legKm=o.via?o.km-o.via.km:o.km;
-  mid+=sign(150,o.signTop,o.via?`Hà Nội ${o.via.km} km →`:`Hà Giang ${o.km} km →`,undefined,Math.max(188,o.signTop.length*13+30));
+  /* .leg1 = first leg only (hidden at the Hà Nội change-over), .leg2 = from Mỹ Đình on */
+  if(o.key==='ht'){
+    /* Ga Yên Trung (thị trấn Đức Thọ): the pickup is right in front of the station */
+    let doors='';[-122,-78,40,84].forEach(dx=>{doors+=`<path d="M${dx},0 V-64 Q${dx+19},-84 ${dx+38},-64 V0 Z" fill="#6b4630" stroke="#1d2160" stroke-width="2.5"/>`;});
+    mid=`<g class="leg1" transform="translate(960,468)"><rect x="-160" y="-118" width="320" height="118" fill="#f2c94c" stroke="#1d2160" stroke-width="3"/>${doors}
+      <path d="M-28,0 V-78 Q0,-104 28,-78 V0 Z" fill="#6b4630" stroke="#1d2160" stroke-width="2.5"/>
+      <path d="M-186,-116 L-150,-152 H150 L186,-116 Z" fill="#b5523b" stroke="#1d2160" stroke-width="3"/>
+      <path d="M-62,-150 L0,-192 L62,-150 Z" fill="#b5523b" stroke="#1d2160" stroke-width="3"/>
+      <rect x="-92" y="-146" width="184" height="26" rx="4" fill="#fff" stroke="#1d2160" stroke-width="2.5"/>
+      <text x="0" y="-127" text-anchor="middle" font-family="Baloo 2, sans-serif" font-weight="800" font-size="17" fill="#b5523b">GA YÊN TRUNG</text></g>`+mid;
+  }
+  mid+=`<g class="leg1">${sign(150,o.signTop,o.via?`Hà Nội ${o.via.km} km →`:`Hà Giang ${o.km} km →`,undefined,Math.max(188,o.signTop.length*13+30))}</g>`;
+  if(o.via)mid+=`<g class="leg2" opacity="0">${sign(150,'BẾN XE MỸ ĐÌNH',`Hà Giang ${legKm} km →`,'#2563a8',220)}</g>`;
   mid+=sign(2700,'Hướng Hà Giang',`còn ${Math.round(legKm*.66)} km`);
   mid+=sign(3950,'TP Tuyên Quang','chào mừng quý khách','#2563a8');
   mid+=sign(5150,'Hà Giang','còn 50 km');
@@ -1077,7 +1103,7 @@ function carTimeline(o){
   const on=(s,fn)=>t.call(fn,null,s);
   t.to(fadeEl,{opacity:0,duration:.6},0);
   /* waiting on the pavement, hand in hand with the suitcase */
-  on(.2,()=>caption(`${o.dep<18*60?'Chiều':'Tối'} thứ 7 · ${o.name}`));
+  on(.2,()=>caption(`${o.dep<18*60?'Chiều':'Tối'} thứ 7 · ${o.spot||o.name}`));
   t.to(clk,{m:o.dep,duration:10.8,ease:'none',onUpdate:()=>renderClock(clk.m)},0);
   on(.2,()=>E.duo.classList.add('walking'));
   t.to(E.duo,{x:920,duration:2.4,ease:'none'},.2);
@@ -1153,13 +1179,14 @@ function carTimeline(o){
     t.to(intro,Object.assign(sky(SKY.pre),{duration:2,ease:'none'}),D1+2.4);
     t.to(intro,Object.assign(sky(SKY.night),{duration:2,ease:'none'}),D1+4.4);
     t.to([E.moon,E.stars,E.beam,...scene.querySelectorAll('.glow')],{opacity:1,duration:1.6},D1+4.4);
-    on(D1+1.8,()=>caption('Theo cao tốc Bắc – Nam ra Hà Nội'));
-    on(D1+2.4,()=>say(560,430,'Ra Hà Nội rồi mới đổi xe lên Hà Giang nhé!',1.8));
+    on(D1+1.1,()=>caption('Rời ga Yên Trung, qua cầu sông La Giang'));
+    on(D1+2.5,()=>caption('Sang Nghệ An, theo cao tốc Bắc – Nam ra Hà Nội'));
+    on(D1+3,()=>say(560,430,'Ra Hà Nội rồi mới đổi xe lên Hà Giang nhé!',1.6));
     on(D1+4,()=>caption('Hoàng hôn qua Thanh Hóa, Ninh Bình'));
     on(D1+6.5,()=>{caption(`20:00 · Tới bến xe Mỹ Đình, ${V.name}`);E.car.classList.remove('driving');Snd.engineStop();});
     t.to(fadeEl,{opacity:1,duration:.5},D1+7.2);
     on(D1+7.7,()=>{caption(`Ăn tối, ${V.depLabel} lên xe giường nằm đi Hà Giang`);
-      G.set([E.far,E.mid,E.near],{x:0});G.set(E.dash,{attr:{'stroke-dashoffset':0}});clk.m=V.dep;renderClock(clk.m);});
+      G.set([E.far,E.mid,E.near],{x:0});G.set(scene.querySelectorAll('.leg1'),{opacity:0});G.set(scene.querySelectorAll('.leg2'),{opacity:1});G.set(E.dash,{attr:{'stroke-dashoffset':0}});clk.m=V.dep;renderClock(clk.m);});
     t.to(fadeEl,{opacity:0,duration:.6},D1+8.6);
   }
   const D0=V?D1+9.4:D1,DUR=15;
