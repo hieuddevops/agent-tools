@@ -6,6 +6,11 @@
 <title>Việt Nam Quest</title>
 <meta name="description" content="Lên lịch phượt khắp Việt Nam: thêm các điểm muốn đi, app tự sắp thứ tự đường đi hợp lý, chia theo ngày và vẽ bản đồ. Xem lại như một chuyến phiêu lưu có sổ hộ chiếu.">
 <meta name="theme-color" content="#20245e">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="VN Quest">
 <meta property="og:title" content="Việt Nam Quest">
 <meta property="og:description" content="Thêm điểm muốn đi, app tự sắp thứ tự, chia ngày và vẽ bản đồ cho chuyến phượt.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M4 58 C12 30 20 10 30 8 C38 10 44 30 60 58 Z' fill='%234f8f68'/%3E%3Ccircle cx='46' cy='16' r='9' fill='%23ff4f9a'/%3E%3C/svg%3E">
@@ -120,7 +125,7 @@ button,input,select{font:inherit}
 .results .tips{cursor:default;font-size:12.5px;color:var(--muted);line-height:1.45}
 .results .tips:hover{background:transparent}
 .nmedit{width:100%;padding:4px 8px;border:2px solid var(--ink);border-radius:8px;font-weight:700;font-size:14px;color:var(--ink)}
-.emptystops{font-size:14px;color:var(--muted);margin:0;padding:12px;border:2px dashed #d9dbf0;border-radius:14px;text-align:center}
+.dayhead{list-style:none;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;justify-content:space-between;margin:8px 0 0;padding:0 2px;font-family:var(--font-display);font-weight:800;font-size:15px;color:var(--dc,var(--ink))}font-size:14px;color:var(--muted);margin:0;padding:12px;border:2px dashed #d9dbf0;border-radius:14px;text-align:center}
 
 /* passport (itinerary) — same look as the Hà Giang Quest passport */
 .passhead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
@@ -192,13 +197,14 @@ button,input,select{font:inherit}
 </style>
 </head>
 <body>
+<script src="../nav.js" data-base="../" data-active="plan" data-z="1500"></script>
 <div class="wrap">
   <header class="top">
     <div class="min-w-0">
-      <a class="btn btn-sm" href="../" style="margin-bottom:12px">← Hà Giang Quest</a>
-      <div class="eyebrow">Lên lịch phượt · bản đồ mở OpenStreetMap</div>
-      <h1 class="title-main">Việt Nam <span>Quest</span></h1>
-      <p class="lead">Thêm những điểm muốn đi, app tự sắp thứ tự cho đỡ vòng vèo, chia theo ngày và vẽ bản đồ. Xong thì xem lại như một chuyến phiêu lưu có sổ hộ chiếu.</p>
+      
+      <div class="eyebrow">Lên lịch chuyến đi</div>
+      <h1 class="title-main" style="font-size:clamp(30px,4.5vw,46px)">Lịch trình <span>của bạn</span></h1>
+      <p class="lead">Chọn nơi xuất phát và ngày đi, điền điểm muốn đến cho từng ngày rồi bấm “Lên lịch trình”.</p>
     </div>
     <div class="trips">
       <label for="tripSel" class="eyebrow" style="width:100%">Chuyến đi</label>
@@ -239,8 +245,8 @@ button,input,select{font:inherit}
       </div>
 
       <div class="grid2">
-        <div class="field"><label for="tripDate">Ngày đi</label><input class="inp" type="date" id="tripDate" required></div>
-        <div class="field"><label for="tripEnd">Ngày về</label><input class="inp" type="date" id="tripEnd" required></div>
+        <div class="field"><label for="tripDate">Ngày bắt đầu</label><input class="inp" type="date" id="tripDate" required></div>
+        <div class="field"><label for="tripEnd">Ngày kết thúc</label><input class="inp" type="date" id="tripEnd" required></div>
       </div>
       <p class="hint" id="daysHint" style="margin-top:-6px"></p>
       <div class="grid2">
@@ -252,15 +258,15 @@ button,input,select{font:inherit}
         <select class="inp" id="endMode"><option value="loop">Quay về nơi xuất phát</option><option value="free">Không tính chiều về (kết thúc ở điểm cuối)</option></select></div>
 
       <div class="sep"></div>
-      <h2>Điểm muốn đến</h2>
+      <h2>Lịch trình từng ngày</h2>
       <div class="search">
-        <label for="q" class="flabel">Tìm địa điểm để thêm</label>
+        <div class="field" style="margin-bottom:8px"><label for="addDay">Thêm điểm vào</label><select class="inp" id="addDay"></select></div>
         <input class="inp" id="q" type="search" placeholder="Ví dụ: Sống lưng khủng long, Lũng Cú, Hồ Gươm…" autocomplete="off"
           role="combobox" aria-expanded="false" aria-controls="results" aria-autocomplete="list">
         <ul class="results" id="results" role="listbox" hidden></ul>
       </div>
       <p class="hint" style="margin-top:-6px">Không thấy tên? Dán link hoặc tọa độ từ Google Maps vào ô trên, hoặc bấm thẳng lên bản đồ.</p>
-      <ul class="stops" id="stops" aria-label="Danh sách điểm muốn đến"></ul>
+      <ul class="stops" id="stops" aria-label="Lịch trình từng ngày"></ul>
 
       <fieldset class="seg">
         <legend class="flabel">Thứ tự đi</legend>
