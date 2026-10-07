@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Hà Giang Quest</title>
-<meta name="description" content="Bản đồ phiêu lưu tương tác cho chuyến Hà Giang 3 ngày 2 đêm: xuất phát từ Hà Nội hoặc Hà Tĩnh (đổi xe ở Hà Nội), đôi bạn mặc trang phục H'Mông đi qua 18 điểm dừng.">
+<meta name="description" content="Bản đồ phiêu lưu Hà Giang 3 ngày 2 đêm cho 4 người: 2 bạn xuất phát từ ga Yên Trung (Đức Thọ, Hà Tĩnh), đón 2 bạn ở Hà Nội, cùng đi qua 18 điểm dừng.">
 <meta name="theme-color" content="#20245e">
 <meta property="og:title" content="Hà Giang Quest">
-<meta property="og:description" content="Bản đồ phiêu lưu Hà Giang 10–13/10 cho 2 người.">
+<meta property="og:description" content="Hà Giang 10–13/10 cho 4 người: Đức Thọ (Hà Tĩnh) → Hà Nội → Hà Giang, 18 điểm dừng.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M4 58 C12 30 20 10 30 8 C38 10 44 30 60 58 Z' fill='%234f8f68'/%3E%3Ccircle cx='46' cy='16' r='9' fill='%23ff4f9a'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -333,7 +333,7 @@ img{max-width:100%}
       <div class="grid gap-4 sm:grid-cols-2 mt-6 mx-auto max-w-[560px]">
         <button class="city" type="button" data-origin="hn">
           <svg viewBox="0 0 120 52" aria-hidden="true"><path d="M4,42 H116" stroke="#1d2160" stroke-width="4"/><path d="M8,42 V26 H112 V42 M8,26 L20,14 L32,26 L44,14 L56,26 L68,14 L80,26 L92,14 L104,26 L112,18 M20,14 H104" fill="none" stroke="#7a6cf0" stroke-width="3.2" stroke-linejoin="round"/><path d="M30,42 V50 M60,42 V50 M90,42 V50" stroke="#1d2160" stroke-width="4"/></svg>
-          <span class="cn">Hà Nội</span><span class="cm">~300 km · khoảng 6 tiếng</span><span class="cd">Xe đón 22:00</span>
+          <span class="cn">Hà Nội</span><span class="cm">~300 km · đón 2 bạn Hà Tĩnh ở Mỹ Đình</span><span class="cd">Xe đón 22:00</span>
         </button>
         <button class="city" type="button" data-origin="ht">
           <svg viewBox="0 0 120 52" aria-hidden="true"><path d="M4,34 H116 V48 H4 Z" fill="#11b3ae"/><path d="M4,48 H116" stroke="#1d2160" stroke-width="4"/><path d="M8,41 q5,-3 10,0 t10,0 M44,44 q5,-3 10,0 t10,0" stroke="#fff" stroke-width="2" fill="none"/><path d="M14,24 Q34,4 54,24 M66,24 Q86,4 106,24" stroke="#ff4f9a" stroke-width="3.2" fill="none"/><path d="M24,23 V13 M34,23 V9 M44,23 V13 M76,23 V13 M86,23 V9 M96,23 V13" stroke="#ff4f9a" stroke-width="1.6"/><path d="M4,24 H116" stroke="#1d2160" stroke-width="4"/><path d="M10,24 V36 M60,24 V36 M110,24 V36" stroke="#1d2160" stroke-width="4"/><path d="M76,40 H100 L95,46 H81 Z" fill="#ffc531" stroke="#1d2160" stroke-width="2"/><path d="M86,40 V30 L95,38 Z" fill="#fff" stroke="#1d2160" stroke-width="1.6"/></svg>
@@ -872,7 +872,10 @@ window.addEventListener('resize',()=>{const n=NODES[STOPS[cur].node];follow(n.x)
    driver opens the rear door → couple boards → 15s night-to-dawn drive
    ===================================================================== */
 const ORIGINS={
-  hn:{key:'hn',name:'Hà Nội',km:300,dep:22*60,depLabel:'22:00',sign:'Hà Nội ~300 km',from:'Hà Nội',signTop:'HÀ NỘI'},
+  hn:{key:'hn',name:'Hà Nội',km:300,dep:22*60,depLabel:'22:00',sign:'Hà Nội ~300 km',from:'Hà Nội',signTop:'HÀ NỘI',meet:{name:'Hà Tĩnh'},spot:'bến xe Mỹ Đình, Hà Nội',
+    blurb:'Đoàn 4 người: 2 bạn ở Hà Nội, 2 bạn ở Hà Tĩnh. 2 bạn Hà Nội đợi ở bến Mỹ Đình, đón 2 bạn Hà Tĩnh vừa đi xe khách từ ga Yên Trung (Đức Thọ) ra tới, cả 4 lên xe giường nằm 22:00, chạy xuyên đêm khoảng 300 km, rạng sáng là tới Hà Giang.',
+    tip:'Đặt xe giường nằm Hà Nội – Hà Giang cho cả 4 người, hẹn nhau ở bến Mỹ Đình. Chốt luôn giờ về 12:30–13:00 thứ 3.',
+    back:'Trả xe, ăn trưa, cả 4 lên xe 12:30–13:00 về Hà Nội, tới bến Mỹ Đình tầm 19h–20h. 2 bạn Hà Nội về nhà, 2 bạn Hà Tĩnh bắt xe đêm về Đức Thọ.'},
   ht:{key:'ht',name:'Đức Thọ',km:610,dep:14*60,depLabel:'14:00',via:{name:'Hà Nội',km:310,arr:20*60,dep:22*60,depLabel:'22:00'},spot:'Ga Yên Trung, Đức Thọ',sign:'Đức Thọ ~610 km',from:'Đức Thọ',signTop:'ĐỨC THỌ · HÀ TĨNH',home:'khoảng 3h sáng thứ 4',
     blurb:'Đoàn 4 người: 2 bạn ở Hà Tĩnh, 2 bạn ở Hà Nội. Xe khách đón 2 bạn Hà Tĩnh trước ga Yên Trung (thị trấn Đức Thọ) lúc 14:00 chiều thứ 7, qua cầu sông La Giang sang Nghệ An rồi chạy khoảng 310 km ra Hà Nội (tầm 6 tiếng), tới bến Mỹ Đình khoảng 20:00. 2 bạn Hà Nội đợi sẵn ở đó, cả 4 ăn tối rồi 22:00 lên xe giường nằm, chạy xuyên đêm 300 km nữa, rạng sáng là tới Hà Giang.',
     tip:'Đặt trước cả hai chặng: xe Đức Thọ – Hà Nội cho 2 người, xe giường nằm Hà Nội – Hà Giang cho cả 4 người (chọn nhà xe đón ở Mỹ Đình cho tiện hẹn nhau). Chiều về: cả 4 đi xe Hà Giang 12:30–13:00 về Hà Nội, rồi 2 bạn Hà Tĩnh bắt xe đêm 21:00–22:00 về Đức Thọ.',
@@ -888,6 +891,7 @@ function applyOrigin(o){
   $('finaleTitle').textContent=`Về tới ${nm}!`;
   $('finaleText').textContent=o.via
     ?`4 người, 18 con dấu, 3 ngày 2 đêm trên cao nguyên đá. Chiều về Hà Giang → ${o.via.name} (chia tay 2 bạn Hà Nội) → ${o.name}, tới nhà ${o.home}.`
+    :o.meet?`4 người, 18 con dấu, 3 ngày 2 đêm trên cao nguyên đá, về tới ${o.name} tối thứ 3 khoảng 19h–20h rồi chia tay 2 bạn ${o.meet.name}.`
     :'18 con dấu, 3 ngày 2 đêm trên cao nguyên đá, kịp về nhà tối thứ 3 khoảng 19h–20h.';
   Object.assign(STOPS[0],{time:o.depLabel,title:`Xuất phát từ ${o.spot||o.name}`,
     blurb:o.blurb||`Xe đón hai bạn lúc ${o.depLabel} tối thứ 7, chạy xuyên đêm khoảng ${o.km} km, rạng sáng là tới Hà Giang.`,
@@ -903,6 +907,10 @@ function applyOrigin(o){
     leg(l0,'20:00–22:00',`Bến Mỹ Đình, ${o.via.name} · đón 2 bạn Hà Nội đợi sẵn, ăn tối, ${o.via.depLabel} cả 4 người lên xe giường nằm đi Hà Giang`);
     const l2=leg(rows[LAST],'19:00–20:00',`Về tới ${o.via.name} · chia tay 2 bạn Hà Nội, ăn tối, bắt xe đêm 21:00–22:00 về ${o.name}`);
     leg(l2,'~3:00 T4',`Về tới ga Yên Trung, ${o.name}, Hà Tĩnh`);
+  }
+  if(o.meet){
+    leg(rows[0],'21:50',`Đón 2 bạn ${o.meet.name} vừa đi xe khách ra tới · cả 4 người lên xe giường nằm`);
+    leg(rows[LAST],'19:00–20:00',`Về tới ${o.name} · chia tay 2 bạn ${o.meet.name} bắt xe đêm về Đức Thọ`);
   }
   if(cur===0||cur===LAST)updatePanel(cur,false);
 }
@@ -1043,8 +1051,10 @@ function buildScene(o){
   for(let fx=6700;fx<9700;fx+=rv(14,26)){const fy=rv(600,700);near+=`<path d="M${fx.toFixed(0)},${(fy+14).toFixed(0)} l0,-14" stroke="#3c8a4a" stroke-width="2"/><circle cx="${fx.toFixed(0)}" cy="${fy.toFixed(0)}" r="${rv(4,7).toFixed(1)}" fill="${fc[Math.floor(r()*4)]}"/>`;}
   s+=`<g id="sNear">${near}</g>`;
   s+=`<g id="sDriver"><g class="flip">${person(DRIVER)}</g></g>`;
+  /* 4 friends: the Hà Tĩnh pair wears BOY/GIRL, the Hà Nội pair BOY2/GIRL2. sDuo is whoever gets picked up first. */
   if(o.via)s+=duo('sDuo2',2.2,BOY2,GIRL2);
-  s+=duo('sDuo',2.2);
+  if(o.meet)s+=duo('sDuo2',2.2,BOY,GIRL);
+  s+=o.meet?duo('sDuo',2.2,BOY2,GIRL2):duo('sDuo',2.2);
   s+=`<g id="sBub"></g><g id="sFx"></g>`;
   scene.innerHTML=s;
   E={car:$('sCar'),bob:$('sCarBob'),beam:$('sBeam'),rd:$('sRD'),fd:$('sFD'),far:$('sFar'),mid:$('sMid'),near:$('sNear'),dash:$('sDash'),
@@ -1062,6 +1072,8 @@ function buildScene(o){
     G.set([E.rd,E.fd],{transformOrigin:'100% 50%',scaleX:1});
   }
   face(E.duo,-1);face(E.driver,1);
+  /* Hà Nội pickup: the Hà Nội pair rides in front, the Hà Tĩnh pair in the back (same seats as the Đức Thọ intro) */
+  if(o.meet){[E.paxG,E.paxG2]=[E.paxG2,E.paxG];[E.paxB,E.paxB2]=[E.paxB2,E.paxB];}
   if(E.duo2){if(G)G.set(E.duo2,{x:1060,y:642,opacity:0});face(E.duo2,-1);}
 }
 function say(x,y,text,hold){
@@ -1105,9 +1117,33 @@ function phoneHide(now){clearInterval(phoneTimer);const p=$('phoneCard');if(p.hi
   if(G&&!now){$('phoneStatus').textContent='Đã kết thúc cuộc gọi';G.to(p,{x:60,opacity:0,duration:.35,delay:.5,ease:'power2.in',onComplete:()=>{p.hidden=true;}});}else p.hidden=true;}
 function routeShow(from,to,km){$('route').hidden=false;$('routeFrom').textContent=from;$('routeTo').textContent=to;renderKm(km,km);if(G)G.fromTo('#route',{y:-12,opacity:0},{y:0,opacity:1,duration:.5});}
 
+/* the second pair (E.duo2) walks to the parked car at cx and boards through the rear door: ~5.4s from T */
+function boardFriends(t,T,cx,sx,hello){
+  const on=(s,fn)=>t.call(fn,null,s);
+  on(T+.6,()=>{E.d2Girl.classList.add('waving');say(sx,480,hello,1.4);});
+  t.to(E.rd,{scaleX:.22,duration:.45,ease:'power2.out'},T+1.2);
+  on(T+1.6,()=>say(cx-40,410,'Lên xe đi, cả 4 đứa đi Hà Giang thôi!',1.3));
+  on(T+1.4,()=>{E.d2Girl.classList.remove('waving');E.duo2.classList.add('walking','fast');});
+  t.to(E.duo2,{x:cx,duration:1.4,ease:'power1.inOut'},T+1.4);
+  on(T+2.8,()=>{E.duo2.classList.remove('walking','fast');E.d2Boy.classList.remove('pull');});
+  t.to(E.d2Case,{keyframes:[{x:120,y:-90,duration:.3,ease:'power2.out'},{x:250,y:-70,duration:.3,ease:'power2.in'}]},T+2.85);
+  t.to(E.d2Case,{opacity:0,duration:.2},T+3.4);
+  on(T+3,()=>{E.d2Girl.classList.remove('hold-l');E.d2Boy.classList.remove('hold-r');});
+  t.to(E.d2Girl,{y:-24,duration:.2,ease:'power2.out'},T+3.05);
+  t.to(E.d2Girl,{x:4,y:-44,scale:.78,opacity:0,duration:.4,ease:'power2.in',transformOrigin:'50% 100%'},T+3.25);
+  t.to(E.paxG2,{opacity:1,duration:.3},T+3.45);
+  on(T+3.5,()=>E.duo2.classList.add('walking'));
+  t.to(E.d2Boy,{x:51,duration:.45,ease:'none'},T+3.5);
+  on(T+3.95,()=>E.duo2.classList.remove('walking'));
+  t.to(E.d2Boy,{y:-24,duration:.2,ease:'power2.out'},T+4);
+  t.to(E.d2Boy,{x:63,y:-44,scale:.78,opacity:0,duration:.4,ease:'power2.in',transformOrigin:'50% 100%'},T+4.2);
+  t.to(E.paxB2,{opacity:1,duration:.3},T+4.4);
+  t.to(E.rd,{scaleX:1,duration:.32,ease:'power2.in'},T+4.7);
+  on(T+5,()=>{Snd.thud();say(cx,430,'Đủ 4 người rồi, xuất phát!',1.2);});
+}
 function carTimeline(o){
   buildScene(o);
-  const V=o.via,legKm=V?o.km-V.km:o.km;
+  const V=o.via,M=o.meet,legKm=V?o.km-V.km:o.km;
   $('introHud').hidden=false;$('routeChip').textContent=V?`${o.from} → ${V.name} → Hà Giang`:`${o.from} → Hà Giang`;$('route').hidden=true;
   const clk={m:o.dep-8},km={k:legKm};renderClock(clk.m);
   const t=G.timeline({onComplete:()=>closeIntro(true)});
@@ -1200,31 +1236,16 @@ function carTimeline(o){
       G.set([E.far,E.mid,E.near],{x:0});G.set(scene.querySelectorAll('.leg1'),{opacity:0});G.set(scene.querySelectorAll('.leg2'),{opacity:1});G.set(E.dash,{attr:{'stroke-dashoffset':0}});
       G.set(E.duo2,{opacity:1});clk.m=V.dep-6;renderClock(clk.m);});
     t.to(fadeEl,{opacity:0,duration:.6},D1+8.6);
-    /* the two friends from Hà Nội board: same moves as the first pair, car now parked at x=600 */
     const T=D1+8.8;
     t.to(clk,{m:V.dep,duration:5,ease:'none',onUpdate:()=>renderClock(clk.m)},T);
-    on(T+.6,()=>{E.d2Girl.classList.add('waving');say(1060,480,'Hai cậu tới rồi! Bọn tớ đợi nãy giờ!',1.4);});
-    t.to(E.rd,{scaleX:.22,duration:.45,ease:'power2.out'},T+1.2);
-    on(T+1.6,()=>say(520,410,'Lên xe đi, cả 4 đứa đi Hà Giang thôi!',1.3));
-    on(T+1.4,()=>{E.d2Girl.classList.remove('waving');E.duo2.classList.add('walking','fast');});
-    t.to(E.duo2,{x:600,duration:1.4,ease:'power1.inOut'},T+1.4);
-    on(T+2.8,()=>{E.duo2.classList.remove('walking','fast');E.d2Boy.classList.remove('pull');});
-    t.to(E.d2Case,{keyframes:[{x:120,y:-90,duration:.3,ease:'power2.out'},{x:250,y:-70,duration:.3,ease:'power2.in'}]},T+2.85);
-    t.to(E.d2Case,{opacity:0,duration:.2},T+3.4);
-    on(T+3,()=>{E.d2Girl.classList.remove('hold-l');E.d2Boy.classList.remove('hold-r');});
-    t.to(E.d2Girl,{y:-24,duration:.2,ease:'power2.out'},T+3.05);
-    t.to(E.d2Girl,{x:4,y:-44,scale:.78,opacity:0,duration:.4,ease:'power2.in',transformOrigin:'50% 100%'},T+3.25);
-    t.to(E.paxG2,{opacity:1,duration:.3},T+3.45);
-    on(T+3.5,()=>E.duo2.classList.add('walking'));
-    t.to(E.d2Boy,{x:51,duration:.45,ease:'none'},T+3.5);
-    on(T+3.95,()=>E.duo2.classList.remove('walking'));
-    t.to(E.d2Boy,{y:-24,duration:.2,ease:'power2.out'},T+4);
-    t.to(E.d2Boy,{x:63,y:-44,scale:.78,opacity:0,duration:.4,ease:'power2.in',transformOrigin:'50% 100%'},T+4.2);
-    t.to(E.paxB2,{opacity:1,duration:.3},T+4.4);
-    t.to(E.rd,{scaleX:1,duration:.32,ease:'power2.in'},T+4.7);
-    on(T+5,()=>{Snd.thud();say(560,430,'Đủ 4 người rồi, xuất phát!',1.2);});
+    boardFriends(t,T,600,1060,'Hai cậu tới rồi! Bọn tớ đợi nãy giờ!');
   }
-  const D0=V?D1+14.4:D1,DUR=15;
+  /* Hà Nội pickup: the Hà Tĩnh pair just got off their bus and walks in */
+  if(M){
+    on(D1,()=>{caption(`2 bạn từ ${M.name} vừa ra tới bến Mỹ Đình`);G.set(E.duo2,{x:1400,opacity:1});});
+    boardFriends(t,D1,560,1180,`Bọn tớ từ ${M.name} ra rồi đây!`);
+  }
+  const D0=V?D1+14.4:M?D1+5.6:D1,DUR=15;
   on(D0,()=>{caption(V?`${V.depLabel} · Xe giường nằm lên đường đi Hà Giang!`:`${o.depLabel} · Lên đường!`);E.car.classList.add('driving');Snd.engineStart();
     routeShow(V?V.name:o.from,'Hà Giang',legKm);});
   t.to(E.car,{x:600,duration:1.6,ease:'power2.inOut'},D0);
@@ -1245,7 +1266,7 @@ function carTimeline(o){
   t.to(E.beam,{opacity:0,duration:2.5},D0+9);
   on(D0+2,()=>caption('Xe lướt êm trên cao tốc về phía Bắc'));
   on(D0+2.6,()=>say(560,430,'Ngủ một giấc đi em, sáng là tới!',1.8));
-  on(D0+5.4,()=>caption('Qua Tuyên Quang, cả hai say giấc'));
+  on(D0+5.4,()=>caption(V||M?'Qua Tuyên Quang, cả 4 say giấc':'Qua Tuyên Quang, cả hai say giấc'));
   on(D0+6.2,()=>say(600,430,'Zzz… zzz…',1.5));
   t.to([E.paxG,E.paxB,E.paxG2,E.paxB2].filter(Boolean),{rotation:7,transformOrigin:'50% 30%',duration:.7,yoyo:true,repeat:3,ease:'sine.inOut'},D0+5.6);
   on(D0+9,()=>caption('Bình minh trên Quốc lộ 2'));
@@ -1264,9 +1285,9 @@ function carTimeline(o){
   on(A+1.4,()=>{E.dGirl.classList.add('hold-l');E.dBoy.classList.add('hold-r','pull');});
   t.to(E.dCase,{opacity:1,duration:.4},A+1.4);
   on(A+1.6,()=>{E.duo.classList.add('cheer');E.dGirl.classList.add('waving');Snd.chime();sBurst(625,470,34);});
-  on(A+1.9,()=>say(648,482,V?'Hà Giang ơi, 4 đứa mình tới rồi!':'Hà Giang ơi, bọn mình tới rồi!',1.8));
-  /* the Hà Nội pair steps out too and stands next to them */
-  if(V){
+  on(A+1.9,()=>say(648,482,V||M?'Hà Giang ơi, 4 đứa mình tới rồi!':'Hà Giang ơi, bọn mình tới rồi!',1.8));
+  /* the second pair steps out too and stands next to them */
+  if(V||M){
     on(A+1.2,()=>{face(E.duo2,1);G.set(E.duo2,{x:900});G.set([E.d2Girl,E.d2Boy],{x:0,y:-40,scale:.78,opacity:0,transformOrigin:'50% 100%'});G.set(E.d2Case,{x:0,y:0,opacity:0});
       E.d2Boy.classList.add('pull');});
     t.to(E.paxG2,{opacity:0,duration:.3},A+1.2);
