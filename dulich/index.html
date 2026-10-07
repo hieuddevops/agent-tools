@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=Patrick+Hand&display=swap">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>window.gsap||document.write('<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"><\/script>')</script>
 <style>
 /* Layout: game HUD on top, big adventure map left, "hộ chiếu" journey log right; single-theme indigo + buckwheat-pink world */
 :root{
@@ -336,7 +337,7 @@ img{max-width:100%}
         </button>
         <button class="city" type="button" data-origin="ht">
           <svg viewBox="0 0 120 52" aria-hidden="true"><path d="M4,34 H116 V48 H4 Z" fill="#11b3ae"/><path d="M4,48 H116" stroke="#1d2160" stroke-width="4"/><path d="M8,41 q5,-3 10,0 t10,0 M44,44 q5,-3 10,0 t10,0" stroke="#fff" stroke-width="2" fill="none"/><path d="M14,24 Q34,4 54,24 M66,24 Q86,4 106,24" stroke="#ff4f9a" stroke-width="3.2" fill="none"/><path d="M24,23 V13 M34,23 V9 M44,23 V13 M76,23 V13 M86,23 V9 M96,23 V13" stroke="#ff4f9a" stroke-width="1.6"/><path d="M4,24 H116" stroke="#1d2160" stroke-width="4"/><path d="M10,24 V36 M60,24 V36 M110,24 V36" stroke="#1d2160" stroke-width="4"/><path d="M76,40 H100 L95,46 H81 Z" fill="#ffc531" stroke="#1d2160" stroke-width="2"/><path d="M86,40 V30 L95,38 Z" fill="#fff" stroke="#1d2160" stroke-width="1.6"/></svg>
-          <span class="cn">Đức Thọ · Hà Tĩnh</span><span class="cm">Ga Yên Trung · sông La Giang · ~610 km · đổi xe ở Hà Nội</span><span class="cd">Xe đón 14:00</span>
+          <span class="cn">Đức Thọ · Hà Tĩnh</span><span class="cm">Ga Yên Trung · sông La Giang · ~610 km · đón 2 bạn ở Hà Nội</span><span class="cd">Xe đón 14:00</span>
         </button>
       </div>
       <div class="flex flex-wrap justify-center gap-3 mt-6">
@@ -494,13 +495,18 @@ const VILLAGERS=[
 ];
 const BOY={g:'m',shirt:'#20246a',t1:'#ff4f9a',t2:'#11b3ae',sash:'#ffc531',pants:'#1b1d3f',capBand:'#ff4f9a',scale:1.15};
 const GIRL={g:'f',jacket:'#2a2f78',t1:'#11b3ae',t2:'#ffc531',sash:'#ff4f9a',apron:'#1b1d3f',skirt:['#ff4f9a','#ffc531','#11b3ae','#7a6cf0','#e8423f','#ff4f9a'],head:'turban',scarf:'#ff4f9a',scarf2:'#ffc531',scarfLine:'#11b3ae',basket:true,flowers:true,phone:true,scale:1.15};
+/* the two friends waiting in Hà Nội */
+const BOY2={g:'m',shirt:'#1d6e6b',t1:'#ffc531',t2:'#ff4f9a',sash:'#e8423f',pants:'#163f5e',capBand:'#ffc531',scale:1.15};
+const GIRL2={g:'f',jacket:'#7a2f6e',t1:'#ffc531',t2:'#11b3ae',sash:'#ffc531',apron:'#2a1f3f',skirt:['#11b3ae','#ffc531','#ff4f9a','#ffffff','#7a6cf0','#11b3ae'],head:'scarf',scarf:'#11b3ae',scale:1.15};
 const DRIVER={g:'m',shirt:'#15161d',t1:'#ffffff',t2:'#15161d',sash:'#15161d',pants:'#15161d',head:'chauffeur',hand:'#ffffff',tie:'#b3123a',skin:'#e9b88f',scale:2.15};
 
 /* Original black luxury sedan, side view facing right, wheels on y=0 */
 function car(p,pax){
   const id=n=>p?` id="${p}${n}"`:'';
   const opening='M-66,-80 L-52,-104 L6,-109 L6,-20 L-62,-20 C-66,-30 -66,-60 -66,-80 Z';
-  const paxSvg=pax&&p?`<clipPath id="${p}PaxClip"><path d="${opening}"/></clipPath><g clip-path="url(#${p}PaxClip)"><g id="${p}PaxB" transform="translate(-10,4)" opacity="0">${person(Object.assign({},BOY,{scale:1.6}))}</g><g id="${p}PaxG" transform="translate(-38,6)" opacity="0">${person(Object.assign({},GIRL,{scale:1.6}))}</g></g>`:'';
+  const front='M6,-109 L38,-108 C56,-107 70,-100 88,-81 L88,-20 L6,-20 Z';
+  const paxSvg=pax&&p?`<clipPath id="${p}PaxClip"><path d="${opening}"/></clipPath><g clip-path="url(#${p}PaxClip)"><g id="${p}PaxB" transform="translate(-10,4)" opacity="0">${person(Object.assign({},BOY,{scale:1.6}))}</g><g id="${p}PaxG" transform="translate(-38,6)" opacity="0">${person(Object.assign({},GIRL,{scale:1.6}))}</g></g>
+    <clipPath id="${p}PaxClip2"><path d="${front}"/></clipPath><g clip-path="url(#${p}PaxClip2)"><g id="${p}PaxB2" transform="translate(56,4)" opacity="0">${person(Object.assign({},BOY2,{scale:1.6}))}</g><g id="${p}PaxG2" transform="translate(28,6)" opacity="0">${person(Object.assign({},GIRL2,{scale:1.6}))}</g></g>`:'';
   const body='#0d0e13';
   const arch=cx=>`<path d="M${cx-35},-17 A35,35 0 0 1 ${cx+35},-17 Z" fill="#050507"/>`;
   const wheel=cx=>{let sp='';for(let a=0;a<180;a+=36){const c=Math.cos(a*Math.PI/180)*19,s=Math.sin(a*Math.PI/180)*19;
@@ -868,9 +874,9 @@ window.addEventListener('resize',()=>{const n=NODES[STOPS[cur].node];follow(n.x)
 const ORIGINS={
   hn:{key:'hn',name:'Hà Nội',km:300,dep:22*60,depLabel:'22:00',sign:'Hà Nội ~300 km',from:'Hà Nội',signTop:'HÀ NỘI'},
   ht:{key:'ht',name:'Đức Thọ',km:610,dep:14*60,depLabel:'14:00',via:{name:'Hà Nội',km:310,arr:20*60,dep:22*60,depLabel:'22:00'},spot:'Ga Yên Trung, Đức Thọ',sign:'Đức Thọ ~610 km',from:'Đức Thọ',signTop:'ĐỨC THỌ · HÀ TĨNH',home:'khoảng 3h sáng thứ 4',
-    blurb:'Xe khách đón hai bạn trước ga Yên Trung (thị trấn Đức Thọ, Hà Tĩnh) lúc 14:00 chiều thứ 7, qua cầu sông La Giang sang Nghệ An rồi chạy khoảng 310 km ra Hà Nội (tầm 6 tiếng), tới bến Mỹ Đình khoảng 20:00. Ăn tối rồi lên xe giường nằm 22:00, chạy xuyên đêm 300 km nữa, rạng sáng là tới Hà Giang.',
-    tip:'Đặt trước cả hai chặng, chặng Hà Nội – Hà Giang chọn nhà xe đón ở Mỹ Đình cho đỡ phải di chuyển. Chiều về: xe Hà Giang 12:30–13:00 về Hà Nội tầm 19h–20h, rồi bắt xe đêm 21:00–22:00 về Đức Thọ.',
-    back:'Chiều về 2 chặng: trả xe, ăn trưa, lên xe 12:30–13:00 từ Hà Giang về Hà Nội (tới bến Mỹ Đình tầm 19h–20h), ăn tối rồi bắt xe đêm 21:00–22:00 từ Hà Nội về Đức Thọ, Hà Tĩnh, tới nhà khoảng 3h sáng thứ 4.'}
+    blurb:'Đoàn 4 người: 2 bạn ở Hà Tĩnh, 2 bạn ở Hà Nội. Xe khách đón 2 bạn Hà Tĩnh trước ga Yên Trung (thị trấn Đức Thọ) lúc 14:00 chiều thứ 7, qua cầu sông La Giang sang Nghệ An rồi chạy khoảng 310 km ra Hà Nội (tầm 6 tiếng), tới bến Mỹ Đình khoảng 20:00. 2 bạn Hà Nội đợi sẵn ở đó, cả 4 ăn tối rồi 22:00 lên xe giường nằm, chạy xuyên đêm 300 km nữa, rạng sáng là tới Hà Giang.',
+    tip:'Đặt trước cả hai chặng: xe Đức Thọ – Hà Nội cho 2 người, xe giường nằm Hà Nội – Hà Giang cho cả 4 người (chọn nhà xe đón ở Mỹ Đình cho tiện hẹn nhau). Chiều về: cả 4 đi xe Hà Giang 12:30–13:00 về Hà Nội, rồi 2 bạn Hà Tĩnh bắt xe đêm 21:00–22:00 về Đức Thọ.',
+    back:'Chiều về 2 chặng: trả xe, ăn trưa, cả 4 lên xe 12:30–13:00 từ Hà Giang về Hà Nội (tới bến Mỹ Đình tầm 19h–20h) và chia tay 2 bạn Hà Nội. 2 bạn Hà Tĩnh ăn tối rồi bắt xe đêm 21:00–22:00 về Đức Thọ, tới nhà khoảng 3h sáng thứ 4.'}
 };
 let origin=ORIGINS.hn;
 function applyOrigin(o){
@@ -881,7 +887,7 @@ function applyOrigin(o){
   $('originLabel').textContent=nm;
   $('finaleTitle').textContent=`Về tới ${nm}!`;
   $('finaleText').textContent=o.via
-    ?`18 con dấu, 3 ngày 2 đêm trên cao nguyên đá. Chiều về Hà Giang → ${o.via.name} → ${o.name}, tới nhà ${o.home}.`
+    ?`4 người, 18 con dấu, 3 ngày 2 đêm trên cao nguyên đá. Chiều về Hà Giang → ${o.via.name} (chia tay 2 bạn Hà Nội) → ${o.name}, tới nhà ${o.home}.`
     :'18 con dấu, 3 ngày 2 đêm trên cao nguyên đá, kịp về nhà tối thứ 3 khoảng 19h–20h.';
   Object.assign(STOPS[0],{time:o.depLabel,title:`Xuất phát từ ${o.spot||o.name}`,
     blurb:o.blurb||`Xe đón hai bạn lúc ${o.depLabel} tối thứ 7, chạy xuyên đêm khoảng ${o.km} km, rạng sáng là tới Hà Giang.`,
@@ -893,9 +899,10 @@ function applyOrigin(o){
   const leg=(after,time,text)=>{const d=document.createElement('div');d.className='logleg';
     d.innerHTML=`<span class="bus" aria-hidden="true">🚌</span><span class="t">${time}</span><span class="n">${text}</span>`;after.after(d);return d;};
   if(o.via){
-    leg(rows[0],'20:00',`Tới bến Mỹ Đình, ${o.via.name} · ăn tối, ${o.via.depLabel} đổi sang xe giường nằm đi Hà Giang`);
-    const l2=leg(rows[LAST],'19:00–20:00',`Về tới ${o.via.name} · ăn tối, bắt xe đêm 21:00–22:00 về ${o.name}`);
-    leg(l2,'~3:00 T4',`Về tới ${o.name}, Hà Tĩnh`);
+    const l0=leg(rows[0],'14:15','Qua cầu sông La Giang, sang Nghệ An, theo cao tốc Bắc – Nam ra Hà Nội');
+    leg(l0,'20:00–22:00',`Bến Mỹ Đình, ${o.via.name} · đón 2 bạn Hà Nội đợi sẵn, ăn tối, ${o.via.depLabel} cả 4 người lên xe giường nằm đi Hà Giang`);
+    const l2=leg(rows[LAST],'19:00–20:00',`Về tới ${o.via.name} · chia tay 2 bạn Hà Nội, ăn tối, bắt xe đêm 21:00–22:00 về ${o.name}`);
+    leg(l2,'~3:00 T4',`Về tới ga Yên Trung, ${o.name}, Hà Tĩnh`);
   }
   if(cur===0||cur===LAST)updatePanel(cur,false);
 }
@@ -952,12 +959,12 @@ function suitcase(){
   <g class="cw"><circle cx="12" cy="-2" r="4.5" fill="#1d2160"/><path d="M9,-2 h6" stroke="#c8cbe8" stroke-width="1.4"/></g>`;
 }
 /* boy: one hand pulls the suitcase, the other holds the girl's hand. Local frame faces right; flip for left. */
-function duo(pid,size){
+function duo(pid,size,boy,girl){
   const k=(size||2.2)/2.2;
   return `<g id="${pid}"><g transform="scale(${k})"><g class="flip">
     <g id="${pid}Case"><g transform="translate(-105,0) rotate(18)">${suitcase()}</g></g>
-    <g id="${pid}Boy" class="hold-r pull"><g transform="translate(-36,0)">${person(Object.assign({},BOY,{scale:2.2}))}</g></g>
-    <g id="${pid}Girl" class="hold-l"><g transform="translate(36,2)">${person(Object.assign({},GIRL,{scale:2.2}))}</g></g>
+    <g id="${pid}Boy" class="hold-r pull"><g transform="translate(-36,0)">${person(Object.assign({},boy||BOY,{scale:2.2}))}</g></g>
+    <g id="${pid}Girl" class="hold-l"><g transform="translate(36,2)">${person(Object.assign({},girl||GIRL,{scale:2.2}))}</g></g>
   </g></g></g>`;
 }
 function face(e,dir){e.querySelector('.flip').setAttribute('transform',dir<0?'scale(-1,1)':'');}
@@ -1036,12 +1043,15 @@ function buildScene(o){
   for(let fx=6700;fx<9700;fx+=rv(14,26)){const fy=rv(600,700);near+=`<path d="M${fx.toFixed(0)},${(fy+14).toFixed(0)} l0,-14" stroke="#3c8a4a" stroke-width="2"/><circle cx="${fx.toFixed(0)}" cy="${fy.toFixed(0)}" r="${rv(4,7).toFixed(1)}" fill="${fc[Math.floor(r()*4)]}"/>`;}
   s+=`<g id="sNear">${near}</g>`;
   s+=`<g id="sDriver"><g class="flip">${person(DRIVER)}</g></g>`;
+  if(o.via)s+=duo('sDuo2',2.2,BOY2,GIRL2);
   s+=duo('sDuo',2.2);
   s+=`<g id="sBub"></g><g id="sFx"></g>`;
   scene.innerHTML=s;
   E={car:$('sCar'),bob:$('sCarBob'),beam:$('sBeam'),rd:$('sRD'),fd:$('sFD'),far:$('sFar'),mid:$('sMid'),near:$('sNear'),dash:$('sDash'),
      stars:$('sStars'),moon:$('sMoon'),sun:$('sSun'),driver:$('sDriver'),bub:$('sBub'),fx:$('sFx'),paxG:$('sPaxG'),paxB:$('sPaxB'),
-     duo:$('sDuo'),dGirl:$('sDuoGirl'),dBoy:$('sDuoBoy'),dCase:$('sDuoCase')};
+     paxG2:$('sPaxG2'),paxB2:$('sPaxB2'),
+     duo:$('sDuo'),dGirl:$('sDuoGirl'),dBoy:$('sDuoBoy'),dCase:$('sDuoCase'),
+     duo2:$('sDuo2'),d2Girl:$('sDuo2Girl'),d2Boy:$('sDuo2Boy'),d2Case:$('sDuo2Case')};
   setSkyVars(o.via?SKY.day:SKY.night);
   if(G){
     /* afternoon pickup: sun up, no moon/stars/street lights/headlights yet */
@@ -1052,6 +1062,7 @@ function buildScene(o){
     G.set([E.rd,E.fd],{transformOrigin:'100% 50%',scaleX:1});
   }
   face(E.duo,-1);face(E.driver,1);
+  if(E.duo2){if(G)G.set(E.duo2,{x:1060,y:642,opacity:0});face(E.duo2,-1);}
 }
 function say(x,y,text,hold){
   if(!G||!E.bub)return;
@@ -1185,11 +1196,35 @@ function carTimeline(o){
     on(D1+4,()=>caption('Hoàng hôn qua Thanh Hóa, Ninh Bình'));
     on(D1+6.5,()=>{caption(`20:00 · Tới bến xe Mỹ Đình, ${V.name}`);E.car.classList.remove('driving');Snd.engineStop();});
     t.to(fadeEl,{opacity:1,duration:.5},D1+7.2);
-    on(D1+7.7,()=>{caption(`Ăn tối, ${V.depLabel} lên xe giường nằm đi Hà Giang`);
-      G.set([E.far,E.mid,E.near],{x:0});G.set(scene.querySelectorAll('.leg1'),{opacity:0});G.set(scene.querySelectorAll('.leg2'),{opacity:1});G.set(E.dash,{attr:{'stroke-dashoffset':0}});clk.m=V.dep;renderClock(clk.m);});
+    on(D1+7.7,()=>{caption(`${V.name} · 2 bạn đã đợi sẵn ở bến Mỹ Đình`);
+      G.set([E.far,E.mid,E.near],{x:0});G.set(scene.querySelectorAll('.leg1'),{opacity:0});G.set(scene.querySelectorAll('.leg2'),{opacity:1});G.set(E.dash,{attr:{'stroke-dashoffset':0}});
+      G.set(E.duo2,{opacity:1});clk.m=V.dep-6;renderClock(clk.m);});
     t.to(fadeEl,{opacity:0,duration:.6},D1+8.6);
+    /* the two friends from Hà Nội board: same moves as the first pair, car now parked at x=600 */
+    const T=D1+8.8;
+    t.to(clk,{m:V.dep,duration:5,ease:'none',onUpdate:()=>renderClock(clk.m)},T);
+    on(T+.6,()=>{E.d2Girl.classList.add('waving');say(1060,480,'Hai cậu tới rồi! Bọn tớ đợi nãy giờ!',1.4);});
+    t.to(E.rd,{scaleX:.22,duration:.45,ease:'power2.out'},T+1.2);
+    on(T+1.6,()=>say(520,410,'Lên xe đi, cả 4 đứa đi Hà Giang thôi!',1.3));
+    on(T+1.4,()=>{E.d2Girl.classList.remove('waving');E.duo2.classList.add('walking','fast');});
+    t.to(E.duo2,{x:600,duration:1.4,ease:'power1.inOut'},T+1.4);
+    on(T+2.8,()=>{E.duo2.classList.remove('walking','fast');E.d2Boy.classList.remove('pull');});
+    t.to(E.d2Case,{keyframes:[{x:120,y:-90,duration:.3,ease:'power2.out'},{x:250,y:-70,duration:.3,ease:'power2.in'}]},T+2.85);
+    t.to(E.d2Case,{opacity:0,duration:.2},T+3.4);
+    on(T+3,()=>{E.d2Girl.classList.remove('hold-l');E.d2Boy.classList.remove('hold-r');});
+    t.to(E.d2Girl,{y:-24,duration:.2,ease:'power2.out'},T+3.05);
+    t.to(E.d2Girl,{x:4,y:-44,scale:.78,opacity:0,duration:.4,ease:'power2.in',transformOrigin:'50% 100%'},T+3.25);
+    t.to(E.paxG2,{opacity:1,duration:.3},T+3.45);
+    on(T+3.5,()=>E.duo2.classList.add('walking'));
+    t.to(E.d2Boy,{x:51,duration:.45,ease:'none'},T+3.5);
+    on(T+3.95,()=>E.duo2.classList.remove('walking'));
+    t.to(E.d2Boy,{y:-24,duration:.2,ease:'power2.out'},T+4);
+    t.to(E.d2Boy,{x:63,y:-44,scale:.78,opacity:0,duration:.4,ease:'power2.in',transformOrigin:'50% 100%'},T+4.2);
+    t.to(E.paxB2,{opacity:1,duration:.3},T+4.4);
+    t.to(E.rd,{scaleX:1,duration:.32,ease:'power2.in'},T+4.7);
+    on(T+5,()=>{Snd.thud();say(560,430,'Đủ 4 người rồi, xuất phát!',1.2);});
   }
-  const D0=V?D1+9.4:D1,DUR=15;
+  const D0=V?D1+14.4:D1,DUR=15;
   on(D0,()=>{caption(V?`${V.depLabel} · Xe giường nằm lên đường đi Hà Giang!`:`${o.depLabel} · Lên đường!`);E.car.classList.add('driving');Snd.engineStart();
     routeShow(V?V.name:o.from,'Hà Giang',legKm);});
   t.to(E.car,{x:600,duration:1.6,ease:'power2.inOut'},D0);
@@ -1212,7 +1247,7 @@ function carTimeline(o){
   on(D0+2.6,()=>say(560,430,'Ngủ một giấc đi em, sáng là tới!',1.8));
   on(D0+5.4,()=>caption('Qua Tuyên Quang, cả hai say giấc'));
   on(D0+6.2,()=>say(600,430,'Zzz… zzz…',1.5));
-  t.to([E.paxG,E.paxB],{rotation:7,transformOrigin:'50% 30%',duration:.7,yoyo:true,repeat:3,ease:'sine.inOut'},D0+5.6);
+  t.to([E.paxG,E.paxB,E.paxG2,E.paxB2].filter(Boolean),{rotation:7,transformOrigin:'50% 30%',duration:.7,yoyo:true,repeat:3,ease:'sine.inOut'},D0+5.6);
   on(D0+9,()=>caption('Bình minh trên Quốc lộ 2'));
   on(D0+10,()=>say(560,430,'Dậy đi anh, trời sáng rồi!',1.6));
   on(D0+12.3,()=>{caption('Núi đá hiện ra rồi!');say(620,430,'Núi kìa! Đẹp quá!',1.4);});
@@ -1229,16 +1264,31 @@ function carTimeline(o){
   on(A+1.4,()=>{E.dGirl.classList.add('hold-l');E.dBoy.classList.add('hold-r','pull');});
   t.to(E.dCase,{opacity:1,duration:.4},A+1.4);
   on(A+1.6,()=>{E.duo.classList.add('cheer');E.dGirl.classList.add('waving');Snd.chime();sBurst(625,470,34);});
-  on(A+1.9,()=>say(648,482,'Hà Giang ơi, bọn mình tới rồi!',1.8));
+  on(A+1.9,()=>say(648,482,V?'Hà Giang ơi, 4 đứa mình tới rồi!':'Hà Giang ơi, bọn mình tới rồi!',1.8));
+  /* the Hà Nội pair steps out too and stands next to them */
+  if(V){
+    on(A+1.2,()=>{face(E.duo2,1);G.set(E.duo2,{x:900});G.set([E.d2Girl,E.d2Boy],{x:0,y:-40,scale:.78,opacity:0,transformOrigin:'50% 100%'});G.set(E.d2Case,{x:0,y:0,opacity:0});
+      E.d2Boy.classList.add('pull');});
+    t.to(E.paxG2,{opacity:0,duration:.3},A+1.2);
+    t.to(E.d2Girl,{y:0,scale:1,opacity:1,duration:.5,ease:'back.out(1.6)'},A+1.3);
+    t.to(E.paxB2,{opacity:0,duration:.3},A+1.5);
+    t.to(E.d2Boy,{y:0,scale:1,opacity:1,duration:.5,ease:'back.out(1.6)'},A+1.5);
+    on(A+1.9,()=>{E.d2Girl.classList.add('hold-l');E.d2Boy.classList.add('hold-r');});
+    t.to(E.d2Case,{opacity:1,duration:.4},A+1.9);
+    on(A+2.1,()=>{E.duo2.classList.add('cheer');E.d2Girl.classList.add('waving');});
+  }
   t.to({},{duration:.1},A+4.4);
   return t;
 }
 
+let choosing=false;
 function playIntro(){
+  if(tl){tl.kill();tl=null;}
   tl=carTimeline(origin);
 }
 function closeIntro(animated){
   if(tl){tl.kill();tl=null;}
+  choosing=false;if(G)G.killTweensOf(chooseEl);
   Snd.engineStop();phoneHide(true);
   const done=()=>{
     intro.hidden=true;$('introHud').hidden=true;$('route').hidden=true;
@@ -1253,8 +1303,10 @@ function closeIntro(animated){
 }
 function openIntro(){
   stopAuto();resetActors();
+  if(tl){tl.kill();tl=null;}
+  choosing=false;
   intro.hidden=false;document.documentElement.style.overflow='hidden';
-  if(G){G.set(intro,{clearProps:'clipPath'});G.set(fadeEl,{opacity:0});}
+  if(G){G.killTweensOf([intro,chooseEl]);G.set(intro,{clearProps:'clipPath'});G.set(chooseEl,{opacity:1});G.set(fadeEl,{opacity:0});}
   $('introHud').hidden=true;$('route').hidden=true;$('cap').textContent='';$('phoneCard').hidden=true;
   buildScene(origin);
   chooseEl.hidden=false;
@@ -1262,9 +1314,13 @@ function openIntro(){
   const first=chooseEl.querySelector('.city');if(first)first.focus({preventScroll:true});
 }
 chooseEl.querySelectorAll('.city').forEach(b=>b.addEventListener('click',()=>{
+  if(choosing)return;   /* a double click used to start two timelines that fought each other */
   Snd.init();applyOrigin(ORIGINS[b.dataset.origin]);
-  if(!G||reduce){chooseEl.hidden=true;closeIntro(false);return;}
-  G.to(chooseEl,{opacity:0,duration:.4,onComplete:()=>{chooseEl.hidden=true;G.set(chooseEl,{opacity:1});playIntro();}});
+  /* the viewer asked for the intro by clicking, so play it even with reduced motion (Windows "Animation effects" off) */
+  if(!G){chooseEl.hidden=true;closeIntro(false);return;}
+  choosing=true;
+  G.to(chooseEl,{opacity:0,duration:.4,onComplete:()=>{chooseEl.hidden=true;G.set(chooseEl,{opacity:1});
+    if(!choosing||intro.hidden)return;choosing=false;playIntro();}});
 }));
 $('skipChoose').addEventListener('click',()=>{applyOrigin(origin);chooseEl.hidden=true;closeIntro(false);});
 $('skipBtn').addEventListener('click',()=>closeIntro(true));
