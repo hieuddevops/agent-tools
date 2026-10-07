@@ -500,34 +500,52 @@ const BOY2={g:'m',shirt:'#1d6e6b',t1:'#ffc531',t2:'#ff4f9a',sash:'#e8423f',pants
 const GIRL2={g:'f',jacket:'#7a2f6e',t1:'#ffc531',t2:'#11b3ae',sash:'#ffc531',apron:'#2a1f3f',skirt:['#11b3ae','#ffc531','#ff4f9a','#ffffff','#7a6cf0','#11b3ae'],head:'scarf',scarf:'#11b3ae',phone:true,scale:1.15};
 const DRIVER={g:'m',shirt:'#15161d',t1:'#ffffff',t2:'#15161d',sash:'#15161d',pants:'#15161d',head:'chauffeur',hand:'#ffffff',tie:'#b3123a',skin:'#e9b88f',scale:2.15};
 
-/* Original black luxury sedan, side view facing right, wheels on y=0 */
+/* Original black luxury sedan, side view facing right, wheels on y=0.
+   Scene car only: everything behind x=7 sits in <g id="sRear">, so setLimo() can slide it back by LIMO
+   and show the middle section (an extra window bay where the Hà Nội pair rides) = a stretch limousine. */
+const LIMO=170;
 function car(p,pax){
-  const id=n=>p?` id="${p}${n}"`:'';
+  const id=n=>p?` id="${p}${n}"`:'',k=p||'m',SPLIT=7;
   const opening='M-66,-80 L-52,-104 L6,-109 L6,-20 L-62,-20 C-66,-30 -66,-60 -66,-80 Z';
-  const front='M6,-109 L38,-108 C56,-107 70,-100 88,-81 L88,-20 L6,-20 Z';
-  const paxSvg=pax&&p?`<clipPath id="${p}PaxClip"><path d="${opening}"/></clipPath><g clip-path="url(#${p}PaxClip)"><g id="${p}PaxB" transform="translate(-10,4)" opacity="0">${person(Object.assign({},BOY,{scale:1.6}))}</g><g id="${p}PaxG" transform="translate(-38,6)" opacity="0">${person(Object.assign({},GIRL,{scale:1.6}))}</g></g>
-    <clipPath id="${p}PaxClip2"><path d="${front}"/></clipPath><g clip-path="url(#${p}PaxClip2)"><g id="${p}PaxB2" transform="translate(56,4)" opacity="0">${person(Object.assign({},BOY2,{scale:1.6}))}</g><g id="${p}PaxG2" transform="translate(28,6)" opacity="0">${person(Object.assign({},GIRL2,{scale:1.6}))}</g></g>`:'';
+  const paxSvg=pax&&p?`<clipPath id="${p}PaxClip"><path d="${opening}"/></clipPath><g clip-path="url(#${p}PaxClip)"><g id="${p}PaxB" transform="translate(-10,4)" opacity="0">${person(Object.assign({},BOY,{scale:1.6}))}</g><g id="${p}PaxG" transform="translate(-38,6)" opacity="0">${person(Object.assign({},GIRL,{scale:1.6}))}</g></g>`:'';
   const body='#0d0e13';
   const arch=cx=>`<path d="M${cx-35},-17 A35,35 0 0 1 ${cx+35},-17 Z" fill="#050507"/>`;
   const wheel=cx=>{let sp='';for(let a=0;a<180;a+=36){const c=Math.cos(a*Math.PI/180)*19,s=Math.sin(a*Math.PI/180)*19;
       sp+=`<path d="M${(cx-c).toFixed(1)},${(-30-s).toFixed(1)} L${(cx+c).toFixed(1)},${(-30+s).toFixed(1)}" stroke="#8d93a3" stroke-width="3"/>`;}
     return `<g class="wheel"><circle cx="${cx}" cy="-30" r="30" fill="#0b0b0e"/><circle cx="${cx}" cy="-30" r="21" fill="#c9ced8" stroke="#8d93a3" stroke-width="2"/>${sp}<circle cx="${cx}" cy="-30" r="6" fill="#1b1d24" stroke="#e6e9f0" stroke-width="1.5"/></g>`;};
-  return `<ellipse cx="0" cy="2" rx="205" ry="11" fill="rgba(0,0,0,.35)"/>
-  <path d="M-190,-34 C-192,-52 -186,-62 -172,-66 L-120,-70 C-104,-72 -96,-78 -86,-92 C-74,-110 -54,-116 -20,-117 L40,-116 C64,-115 80,-108 98,-90 L112,-76 C140,-74 168,-70 184,-64 C192,-60 194,-46 192,-34 C190,-24 184,-18 176,-16 L-176,-16 C-186,-18 -190,-24 -190,-34 Z" class="cb" fill="${body}" stroke="#000" stroke-width="2"/>
+  /* shapes that run the full length are drawn twice, clipped to the front and rear halves */
+  const span=`<path d="M-190,-34 C-192,-52 -186,-62 -172,-66 L-120,-70 C-104,-72 -96,-78 -86,-92 C-74,-110 -54,-116 -20,-117 L40,-116 C64,-115 80,-108 98,-90 L112,-76 C140,-74 168,-70 184,-64 C192,-60 194,-46 192,-34 C190,-24 184,-18 176,-16 L-176,-16 C-186,-18 -190,-24 -190,-34 Z" class="cb" fill="${body}" stroke="#000" stroke-width="2"/>
   <path d="M-84,-80 C-72,-102 -52,-108 -22,-109 L38,-108 C56,-107 70,-100 88,-81 Z" fill="#283041" stroke="#cfd5e2" stroke-width="2"/>
-  <path d="M-64,-80 L-52,-104" class="cbs" stroke="${body}" stroke-width="6"/>
-  <path d="M-104,-80 L-66,-80 M92,-80 L110,-77" stroke="#dfe3ec" stroke-width="2.4"/>
   <path d="M-170,-62 C-60,-67 80,-67 182,-61" stroke="rgba(255,255,255,.16)" stroke-width="4" fill="none"/>
   <path d="M-60,-114 C-20,-118 30,-117 52,-114" stroke="rgba(255,255,255,.28)" stroke-width="3" fill="none"/>
-  <path d="M-150,-25 L150,-25" stroke="#8d93a3" stroke-width="1.8"/>
+  <path d="M-150,-25 L150,-25" stroke="#8d93a3" stroke-width="1.8"/>`;
+  const clips=`<clipPath id="${k}CF"><rect x="${SPLIT}" y="-200" width="400" height="300"/></clipPath><clipPath id="${k}CR"><rect x="-300" y="-200" width="${300+SPLIT}" height="300"/></clipPath>`;
+  const rear=`<g${id('Rear')}><g clip-path="url(#${k}CR)">${span}</g>
+  <path d="M-64,-80 L-52,-104" class="cbs" stroke="${body}" stroke-width="6"/>
+  <path d="M-104,-80 L-66,-80" stroke="#dfe3ec" stroke-width="2.4"/>
   <path d="M-188,-58 L-181,-61 L-181,-48 L-189,-47 Z" fill="#ff2f3f"/>
+  <g${id('RI')}><path d="${opening}" fill="#2a1f1b"/><rect x="-58" y="-82" width="40" height="46" rx="9" fill="#c9a77a"/><rect x="-62" y="-40" width="54" height="13" rx="5" fill="#b38f60"/></g>${paxSvg}
+  <g${id('RD')}><path d="M-66,-80 L6,-80 L6,-21 L-62,-21 C-66,-30 -66,-60 -66,-80 Z" class="cb" fill="${body}" stroke="#2b2e36" stroke-width="1.6"/><path d="M-62,-81 L-50,-104 C-36,-108 -20,-109 4,-109 L4,-81 Z" fill="#283041" fill-opacity="${pax?.72:1}" stroke="#cfd5e2" stroke-width="1.6"/><rect x="-22" y="-66" width="14" height="3.4" rx="1.5" fill="#dfe3ec"/><path d="M-66,-80 L6,-80" stroke="#dfe3ec" stroke-width="2.4"/></g>
+  ${arch(-122)}${wheel(-122)}</g>`;
+  /* limo middle bay: long side window with the Hà Nội pair behind the glass */
+  const L=LIMO,win=`<rect x="8" y="-108" width="${L-16}" height="27" rx="4"/>`;
+  const mid=pax&&p?`<g${id('Bay')} transform="translate(${SPLIT-L},0)" opacity="0">
+  <path d="M0,-117 H${L} V-16 H0 Z" class="cb" fill="${body}"/><path d="M0,-117 H${L} M0,-16 H${L}" stroke="#000" stroke-width="2"/>
+  <g fill="#2a1f1b">${win}</g>
+  <clipPath id="${p}PaxClip2">${win}</clipPath><g clip-path="url(#${p}PaxClip2)"><g id="${p}PaxG2" transform="translate(${L/2-30},6)" opacity="0">${person(Object.assign({},GIRL2,{scale:1.6}))}</g><g id="${p}PaxB2" transform="translate(${L/2+26},4)" opacity="0">${person(Object.assign({},BOY2,{scale:1.6}))}</g></g>
+  <g fill="#283041" fill-opacity=".55" stroke="#cfd5e2" stroke-width="1.6">${win}</g>
+  <path d="M${L/2},-108 V-81" class="cbs" stroke="${body}" stroke-width="5"/>
+  <path d="M0,-80 H${L}" stroke="#dfe3ec" stroke-width="2.4"/><path d="M0,-65 H${L}" stroke="rgba(255,255,255,.16)" stroke-width="4"/><path d="M0,-25 H${L}" stroke="#8d93a3" stroke-width="1.8"/>
+  <path d="M${L/2},-80 V-21" stroke="#2b2e36" stroke-width="1.6"/><rect x="${L/2-22}" y="-66" width="14" height="3.4" rx="1.5" fill="#dfe3ec"/></g>`:'';
+  return `${clips}<ellipse${id('Shadow')} cx="0" cy="2" rx="205" ry="11" fill="rgba(0,0,0,.35)"/>
+  ${rear}${mid}
+  <g clip-path="url(#${k}CF)">${span}</g>
+  <path d="M92,-80 L110,-77" stroke="#dfe3ec" stroke-width="2.4"/>
   <path d="M177,-61 L190,-57 L191,-49 L176,-51 Z" fill="#f4f7ff"/><circle${id('HL')} cx="192" cy="-53" r="11" fill="#fff6c0" opacity=".5"/>
   <rect x="188" y="-46" width="5" height="16" rx="1.5" fill="#dfe3ec"/>
-  <g${id('RI')}><path d="M-66,-80 L-52,-104 L6,-109 L6,-20 L-62,-20 C-66,-30 -66,-60 -66,-80 Z" fill="#2a1f1b"/><rect x="-58" y="-82" width="40" height="46" rx="9" fill="#c9a77a"/><rect x="-62" y="-40" width="54" height="13" rx="5" fill="#b38f60"/></g>${paxSvg}
-  <g${id('RD')}><path d="M-66,-80 L6,-80 L6,-21 L-62,-21 C-66,-30 -66,-60 -66,-80 Z" class="cb" fill="${body}" stroke="#2b2e36" stroke-width="1.6"/><path d="M-62,-81 L-50,-104 C-36,-108 -20,-109 4,-109 L4,-81 Z" fill="#283041" fill-opacity="${pax?.72:1}" stroke="#cfd5e2" stroke-width="1.6"/><rect x="-22" y="-66" width="14" height="3.4" rx="1.5" fill="#dfe3ec"/><path d="M-66,-80 L6,-80" stroke="#dfe3ec" stroke-width="2.4"/></g>
   <g${id('FI')}><path d="M8,-80 L10,-108 L38,-108 C56,-107 70,-100 86,-82 L92,-22 L8,-22 Z" fill="#2a1f1b"/><circle cx="56" cy="-74" r="11" fill="none" stroke="#6b5a4a" stroke-width="3"/></g>
   <g${id('FD')}><path d="M8,-80 L90,-80 C96,-72 96,-40 92,-21 L8,-21 Z" class="cb" fill="${body}" stroke="#2b2e36" stroke-width="1.6"/><path d="M10,-81 L10,-108 L38,-108 C56,-107 70,-100 86,-82 Z" fill="#283041" stroke="#cfd5e2" stroke-width="1.6"/><rect x="28" y="-66" width="14" height="3.4" rx="1.5" fill="#dfe3ec"/><path d="M8,-80 L90,-80" stroke="#dfe3ec" stroke-width="2.4"/><path d="M84,-86 l12,-7 l7,5 l-5,6 Z" class="cb" fill="${body}" stroke="#2b2e36"/></g>
-  ${arch(-122)}${arch(128)}${wheel(-122)}${wheel(128)}`;
+  ${arch(128)}${wheel(128)}`;
 }
 
 /* ---------- Land, river, decor ---------- */
@@ -1058,7 +1076,7 @@ function buildScene(o){
   scene.innerHTML=s;
   E={car:$('sCar'),bob:$('sCarBob'),beam:$('sBeam'),rd:$('sRD'),fd:$('sFD'),far:$('sFar'),mid:$('sMid'),near:$('sNear'),dash:$('sDash'),
      stars:$('sStars'),moon:$('sMoon'),sun:$('sSun'),driver:$('sDriver'),bub:$('sBub'),fx:$('sFx'),paxG:$('sPaxG'),paxB:$('sPaxB'),
-     paxG2:$('sPaxG2'),paxB2:$('sPaxB2'),
+     paxG2:$('sPaxG2'),paxB2:$('sPaxB2'),rear:$('sRear'),bay:$('sBay'),shadow:$('sShadow'),
      duo:$('sDuo'),dGirl:$('sDuoGirl'),dBoy:$('sDuoBoy'),dCase:$('sDuoCase'),
      duo2:$('sDuo2'),d2Girl:$('sDuo2Girl'),d2Boy:$('sDuo2Boy'),d2Case:$('sDuo2Case')};
   setSkyVars(o.via?SKY.day:SKY.night);
@@ -1121,6 +1139,9 @@ function routeShow(from,to,km){$('route').hidden=false;$('routeFrom').textConten
 
 const CAR_WHITE='#eef1f6',CAR_BLACK='#0d0e13',MEET_X=1020;
 function paintCar(c){scene.querySelectorAll('#sCar .cb').forEach(e=>e.setAttribute('fill',c));scene.querySelectorAll('#sCar .cbs').forEach(e=>e.setAttribute('stroke',c));}
+/* stretch limo: the rear half slides back by LIMO and the middle window bay appears */
+function setLimo(on){G.set(E.rear,{x:on?-LIMO:0});G.set(E.bay,{opacity:on?1:0});
+  E.shadow.setAttribute('rx',on?205+LIMO/2:205);E.shadow.setAttribute('cx',on?-LIMO/2:0);}
 /* Mỹ Đình, the same scene in both intros. Before T: the white coach is parked at cx with the Hà Tĩnh pair inside,
    the Hà Nội pair stands at MEET_X. The Hà Tĩnh pair gets out, the 4 meet, the coach leaves, they have dinner,
    the black car comes and all 4 board. Returns the time the black car is ready to leave. */
@@ -1151,7 +1172,7 @@ function meetAtMyDinh(t,T,cx,clk){
   t.to(E.car,{x:1900,duration:1.6,ease:'power2.in'},T+4.8);
   /* dinner together, then the black car */
   t.to(fadeEl,{opacity:1,duration:.5},T+6.5);
-  on(T+7,()=>{caption('Cả 4 ăn tối cùng nhau ở bến Mỹ Đình');E.car.classList.remove('driving');paintCar(CAR_BLACK);G.set(E.car,{x:-560});
+  on(T+7,()=>{caption('Cả 4 ăn tối cùng nhau ở bến Mỹ Đình');E.car.classList.remove('driving');paintCar(CAR_BLACK);setLimo(true);G.set(E.car,{x:-560});
     clk.m=21*60+55;renderClock(clk.m);});
   t.to(fadeEl,{opacity:0,duration:.6},T+8);
   t.to(clk,{m:22*60,duration:4,ease:'none',onUpdate:()=>renderClock(clk.m)},T+8.6);
@@ -1167,40 +1188,40 @@ function meetAtMyDinh(t,T,cx,clk){
   t.to(E.driver,{x:cx+80,y:642,scale:1,opacity:1,duration:.5,ease:'power2.out'},K+2.9);
   t.to(E.fd,{scaleX:1,duration:.3,ease:'power2.in'},K+3.45);
   on(K+3.6,()=>{Snd.thud();face(E.driver,-1);E.driver.classList.add('walking');});
-  t.to(E.driver,{x:cx-120,duration:1,ease:'none'},K+3.6);
-  on(K+4.6,()=>{E.driver.classList.remove('walking');face(E.driver,1);});
-  t.to(E.rd,{scaleX:.22,duration:.45,ease:'power2.out'},K+4.65);
-  on(K+4.75,()=>{say(cx-120,490,'Mời các anh chị lên xe ạ!',1.4);E.driver.classList.add('waving');});
+  t.to(E.driver,{x:cx-120-LIMO,duration:1.6,ease:'none'},K+3.6);
+  on(K+5.2,()=>{E.driver.classList.remove('walking');face(E.driver,1);});
+  t.to(E.rd,{scaleX:.22,duration:.45,ease:'power2.out'},K+5.25);
+  on(K+5.35,()=>{say(cx-120-LIMO,490,'Mời các anh chị lên xe ạ!',1.4);E.driver.classList.add('waving');});
   /* the Hà Tĩnh pair boards first (back seat) */
-  const S=K+5.3;
+  const S=K+5.4,B=S+.5;   /* B: the walk back to the limo's rear door takes .5s longer than before */
   on(S,()=>{face(E.duo,-1);E.duo.classList.add('walking');});
-  t.to(E.duo,{x:cx,duration:.4,ease:'none'},S);
-  on(S+.4,()=>{E.duo.classList.remove('walking');E.dBoy.classList.remove('pull');say(cx-120,490,'Để em cất vali cho ạ!',1);});
-  t.to(E.dCase,{keyframes:[{x:120,y:-90,duration:.3,ease:'power2.out'},{x:250,y:-70,duration:.3,ease:'power2.in'}]},S+.45);
-  t.to(E.dCase,{opacity:0,duration:.2},S+1);
-  on(S+1.1,()=>{E.dGirl.classList.remove('hold-l');E.dBoy.classList.remove('hold-r');});
-  t.to(E.dGirl,{y:-24,duration:.2,ease:'power2.out'},S+1.15);
-  t.to(E.dGirl,{x:4,y:-44,scale:.78,opacity:0,duration:.4,ease:'power2.in',transformOrigin:'50% 100%'},S+1.35);
-  t.to(E.paxG,{opacity:1,duration:.3},S+1.55);
-  on(S+1.6,()=>E.duo.classList.add('walking'));
-  t.to(E.dBoy,{x:51,duration:.45,ease:'none'},S+1.6);
-  on(S+2.05,()=>E.duo.classList.remove('walking'));
-  t.to(E.dBoy,{y:-24,duration:.2,ease:'power2.out'},S+2.1);
-  t.to(E.dBoy,{x:63,y:-44,scale:.78,opacity:0,duration:.4,ease:'power2.in',transformOrigin:'50% 100%'},S+2.3);
-  t.to(E.paxB,{opacity:1,duration:.3},S+2.5);
+  t.to(E.duo,{x:cx-LIMO,duration:.9,ease:'none'},S);
+  on(B+.4,()=>{E.duo.classList.remove('walking');E.dBoy.classList.remove('pull');say(cx-120-LIMO,490,'Để em cất vali cho ạ!',1);});
+  t.to(E.dCase,{keyframes:[{x:120,y:-90,duration:.3,ease:'power2.out'},{x:250,y:-70,duration:.3,ease:'power2.in'}]},B+.45);
+  t.to(E.dCase,{opacity:0,duration:.2},B+1);
+  on(B+1.1,()=>{E.dGirl.classList.remove('hold-l');E.dBoy.classList.remove('hold-r');});
+  t.to(E.dGirl,{y:-24,duration:.2,ease:'power2.out'},B+1.15);
+  t.to(E.dGirl,{x:4,y:-44,scale:.78,opacity:0,duration:.4,ease:'power2.in',transformOrigin:'50% 100%'},B+1.35);
+  t.to(E.paxG,{opacity:1,duration:.3},B+1.55);
+  on(B+1.6,()=>E.duo.classList.add('walking'));
+  t.to(E.dBoy,{x:51,duration:.45,ease:'none'},B+1.6);
+  on(B+2.05,()=>E.duo.classList.remove('walking'));
+  t.to(E.dBoy,{y:-24,duration:.2,ease:'power2.out'},B+2.1);
+  t.to(E.dBoy,{x:63,y:-44,scale:.78,opacity:0,duration:.4,ease:'power2.in',transformOrigin:'50% 100%'},B+2.3);
+  t.to(E.paxB,{opacity:1,duration:.3},B+2.5);
   /* then the Hà Nội pair */
-  const F=S+2.6;
-  boardFriends(t,F,cx,MEET_X-120,'Đợi bọn tớ với!');
+  const F=B+2.6;
+  boardFriends(t,F,cx-LIMO,MEET_X-120,'Đợi bọn tớ với!');
   /* driver closes up and gets back in */
   const R=F+5.3;
   on(R,()=>{E.driver.classList.remove('waving');E.driver.classList.add('walking');});
-  t.to(E.driver,{x:cx+55,duration:.8,ease:'none'},R);
-  on(R+.8,()=>E.driver.classList.remove('walking'));
-  t.to(E.fd,{scaleX:.22,duration:.3},R+.8);
-  t.to(E.driver,{y:598,scale:.72,opacity:0,duration:.45,ease:'power2.in'},R+1.05);
-  t.to(E.fd,{scaleX:1,duration:.25},R+1.55);
-  on(R+1.8,()=>Snd.thud());
-  return R+2.1;
+  t.to(E.driver,{x:cx+55,duration:1.4,ease:'none'},R);
+  on(R+1.4,()=>E.driver.classList.remove('walking'));
+  t.to(E.fd,{scaleX:.22,duration:.3},R+1.4);
+  t.to(E.driver,{y:598,scale:.72,opacity:0,duration:.45,ease:'power2.in'},R+1.65);
+  t.to(E.fd,{scaleX:1,duration:.25},R+2.15);
+  on(R+2.4,()=>Snd.thud());
+  return R+2.7;
 }
 /* the second pair (E.duo2) walks to the parked car at cx and boards through the rear door: ~5.4s from T */
 function boardFriends(t,T,cx,sx,hello){
@@ -1374,7 +1395,7 @@ function carTimeline(o){
   const A=D0+DUR;
   on(A,()=>{E.car.classList.remove('driving');Snd.engineStop();caption('Chủ nhật 11/10 · 04:30 · Chào mừng đến Hà Giang!');});
   t.to(E.rd,{scaleX:.22,duration:.4,ease:'power2.out'},A+.3);
-  on(A+.5,()=>{face(E.duo,1);G.set(E.duo,{x:620});G.set([E.dGirl,E.dBoy],{x:0,y:-40,scale:.78,opacity:0,transformOrigin:'50% 100%'});G.set(E.dCase,{x:0,y:0,opacity:0});});
+  on(A+.5,()=>{face(E.duo,1);G.set(E.duo,{x:V||M?450:620});G.set([E.dGirl,E.dBoy],{x:0,y:-40,scale:.78,opacity:0,transformOrigin:'50% 100%'});G.set(E.dCase,{x:0,y:0,opacity:0});});
   t.to(E.paxG,{opacity:0,duration:.3},A+.6);
   t.to(E.dGirl,{y:0,scale:1,opacity:1,duration:.5,ease:'back.out(1.6)'},A+.6);
   t.to(E.paxB,{opacity:0,duration:.3},A+.9);
@@ -1386,7 +1407,7 @@ function carTimeline(o){
   on(A+1.9,()=>say(648,482,V||M?'Hà Giang ơi, 4 đứa mình tới rồi!':'Hà Giang ơi, bọn mình tới rồi!',1.8));
   /* the second pair steps out too and stands next to them */
   if(V||M){
-    on(A+1.2,()=>{face(E.duo2,1);G.set(E.duo2,{x:900});G.set([E.d2Girl,E.d2Boy],{x:0,y:-40,scale:.78,opacity:0,transformOrigin:'50% 100%'});G.set(E.d2Case,{x:0,y:0,opacity:0});
+    on(A+1.2,()=>{face(E.duo2,1);G.set(E.duo2,{x:740});G.set([E.d2Girl,E.d2Boy],{x:0,y:-40,scale:.78,opacity:0,transformOrigin:'50% 100%'});G.set(E.d2Case,{x:0,y:0,opacity:0});
       E.d2Boy.classList.add('pull');});
     t.to(E.paxG2,{opacity:0,duration:.3},A+1.2);
     t.to(E.d2Girl,{y:0,scale:1,opacity:1,duration:.5,ease:'back.out(1.6)'},A+1.3);
