@@ -203,6 +203,30 @@ body{
 
 .finale{position:absolute;inset:0;display:grid;place-items:center;background:rgba(20,22,70,.55);padding:16px}
 .finale .card{max-width:420px;text-align:center;padding:24px 22px}
+
+/* Overlays: Mã Pì Lèng mini-game + passport image */
+.overlay{position:fixed;inset:0;z-index:70;display:grid;grid-template-columns:minmax(0,1fr);place-items:center;padding-inline:16px;
+  padding-block:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-bottom,0px));background:rgba(8,10,36,.8)}
+.overlay .sheet{width:min(100%,440px);max-height:100%;display:flex;flex-direction:column;gap:12px;padding:16px;overflow:auto}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.xbtn{flex:none;width:40px;height:40px;border-radius:12px;border:3px solid var(--ink);background:#fff;color:var(--ink);
+  font:800 18px/1 var(--font-display);cursor:pointer;box-shadow:0 3px 0 var(--ink)}
+.xbtn:focus-visible{outline:3px solid var(--sun);outline-offset:3px}
+.game-wrap{position:relative;align-self:center;border:3px solid var(--ink);border-radius:16px;overflow:hidden;background:#1f5a55;touch-action:none;user-select:none;-webkit-user-select:none}
+#mplCanvas{display:block}
+.game-msg{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:22px;background:rgba(14,16,48,.74);color:#fff}
+.game-msg h4{font:800 30px/1.05 var(--font-display);margin:0 0 10px;color:var(--sun);text-shadow:2px 2px 0 var(--pink);text-wrap:balance}
+.game-msg p{margin:0 0 16px;font-size:14px;line-height:1.5}
+.game-msg .row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.pad{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pad button{font:800 24px/1 var(--font-display);padding:14px 0;border:3px solid var(--ink);border-radius:14px;background:var(--sun);color:var(--ink);
+  box-shadow:0 4px 0 var(--ink);cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.pad button.on{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.pass-img{display:block;width:100%;height:auto;aspect-ratio:4/5;border-radius:12px;border:3px solid var(--ink);background:#20245e}
+/* gold stamp for conquering Mã Pì Lèng */
+.stamp{position:relative}
+.logrow.gold .stamp::after{content:"★";position:absolute;top:-9px;right:-9px;width:19px;height:19px;border-radius:50%;display:grid;place-items:center;
+  background:var(--sun);border:2px solid var(--ink);color:var(--ink);font-size:11px;line-height:1}
 @media (prefers-reduced-motion: reduce){
   .walking *, .waving *, .cheer *, .cloud, .river-flow, .flag, .pulse, .twinkle, .driving .wheel, .ring, .blink, .blink2{animation:none!important}
   .btn,.tab{transition:none}
@@ -219,9 +243,9 @@ img{max-width:100%}
 <div class="wrap">
   <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between mb-5">
     <div class="min-w-0">
-      <div class="eyebrow">Bản đồ phiêu lưu · 2 người · 3N2Đ</div>
+      <div class="eyebrow">Bản đồ phiêu lưu · 4 người · 3N2Đ</div>
       <h1 class="title-main mt-1">Hà Giang <span>Quest</span></h1>
-      <p class="mt-2 text-[15px] text-indigo-100 max-w-[60ch]">Theo chân đôi bạn đi vòng cao nguyên đá từ tối thứ 7 đến trưa thứ 3. Đến mỗi điểm, bà con bản địa sẽ ra chào đón.</p>
+      <p class="mt-2 text-[15px] text-indigo-100 max-w-[60ch]">Theo chân 4 bạn (2 Hà Tĩnh, 2 Hà Nội) đi vòng cao nguyên đá từ tối thứ 7 đến trưa thứ 3. Đến mỗi điểm, bà con bản địa sẽ ra chào đón.</p>
       <button class="btn btn-sm mt-3" id="replayIntroBtn" type="button">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg><span>Xem lại intro · <span id="originLabel">Hà Nội</span></span>
       </button>
@@ -264,7 +288,10 @@ img{max-width:100%}
           <h2 class="display text-[34px] font-extrabold leading-none mt-1" id="finaleTitle">Về tới Hà Nội!</h2>
           <p class="mt-3 text-[15px]" id="finaleText">18 con dấu, 3 ngày 2 đêm trên cao nguyên đá, kịp về nhà tối thứ 3 khoảng 19h–20h.</p>
           <p class="hand text-[22px] mt-2" style="color:var(--pink)">Ua tsaug! Hẹn mùa hoa sau nhé.</p>
-          <button class="btn btn-pink mt-4" id="replayBtn">Đi lại từ đầu</button>
+          <div class="flex flex-wrap justify-center gap-2 mt-4">
+            <button class="btn btn-sun" id="passBtn2" type="button">📸 Ảnh hộ chiếu</button>
+            <button class="btn btn-pink" id="replayBtn" type="button">Đi lại từ đầu</button>
+          </div>
         </div>
       </div>
     </section>
@@ -283,6 +310,7 @@ img{max-width:100%}
           <svg viewBox="0 0 24 24" fill="none" stroke="#11b3ae" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>
           <span id="tipText"></span>
         </div>
+        <button class="btn btn-sun self-start" id="mplBtn" type="button" hidden>🏍️ <span id="mplBtnLabel">Thử vượt đèo Mã Pì Lèng</span></button>
       </article>
 
       <section class="chunk p-5" aria-label="Sổ hộ chiếu hành trình">
@@ -292,6 +320,7 @@ img{max-width:100%}
         </div>
         <div class="progress mb-3" aria-hidden="true"><div id="progressBar"></div></div>
         <div class="log" id="log"></div>
+        <button class="btn btn-sm mt-3 w-full justify-center" id="passBtn" type="button">📸 Tạo ảnh hộ chiếu để chia sẻ</button>
       </section>
     </aside>
   </main>
@@ -348,6 +377,40 @@ img{max-width:100%}
   </div>
 </div>
 
+<div class="overlay" id="mpl" role="dialog" aria-modal="true" aria-labelledby="mplTitle" hidden>
+  <div class="chunk sheet">
+    <div class="sheet-head">
+      <div><div class="eyebrow" style="color:var(--pink)">Mini-game</div>
+        <h3 class="display font-extrabold text-[24px] leading-none m-0" id="mplTitle">Vượt đèo Mã Pì Lèng</h3></div>
+      <button class="xbtn" id="mplClose" type="button" aria-label="Đóng mini-game">✕</button>
+    </div>
+    <div class="game-wrap" id="mplWrap">
+      <canvas id="mplCanvas" aria-label="Màn chơi vượt đèo Mã Pì Lèng"></canvas>
+      <div class="game-msg" id="mplMsg"><div>
+        <h4 id="mplMsgTitle"></h4><p id="mplMsgText"></p>
+        <div class="row"><button class="btn btn-pink" id="mplGo" type="button">Xuất phát</button><button class="btn" id="mplBack" type="button" hidden>Về bản đồ</button></div>
+      </div></div>
+    </div>
+    <div class="pad"><button id="mplL" type="button" aria-label="Lái sang trái">◀</button><button id="mplR" type="button" aria-label="Lái sang phải">▶</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="pass" role="dialog" aria-modal="true" aria-labelledby="passTitle" hidden>
+  <div class="chunk sheet">
+    <div class="sheet-head">
+      <div><div class="eyebrow" style="color:var(--pink)">Kỷ niệm chuyến đi</div>
+        <h3 class="display font-extrabold text-[24px] leading-none m-0" id="passTitle">Ảnh hộ chiếu</h3></div>
+      <button class="xbtn" id="passClose" type="button" aria-label="Đóng">✕</button>
+    </div>
+    <img class="pass-img" id="passImg" alt="Ảnh hộ chiếu chuyến Hà Giang của 4 bạn">
+    <p class="text-[13px] m-0" style="color:var(--muted)" id="passNote">Đang vẽ ảnh…</p>
+    <div class="flex flex-wrap gap-2">
+      <button class="btn btn-pink" id="passShare" type="button" hidden>Chia sẻ</button>
+      <button class="btn btn-sun" id="passSave" type="button" disabled>Lưu ảnh</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
 "use strict";
@@ -389,24 +452,24 @@ const ROADS={
   R3:['M',[1005,615],[885,642],[765,615],[650,552],[575,478],'E']
 };
 const STOPS=[
-  {node:'HN',day:'t7',time:'22:00',title:'Lên xe giường nằm ở Hà Nội',blurb:'Hai bạn lên xe đêm, ngủ một giấc, rạng sáng là tới Hà Giang.',tip:'Đặt luôn vé chiều về chuyến 12:30–13:00 thứ 3 để kịp về nhà tối.',legs:[],night:true},
-  {node:'A',day:'cn',time:'4:00–7:30',title:'TP Hà Giang · Cột mốc Km0',blurb:'Xuống xe lúc rạng sáng, nằm nghỉ tới 6h, ăn bánh cuốn, nhận xe và check-in cột mốc Km0.',greet:'Chào mừng tới Hà Giang!',tip:'Tới sớm thì ghé quán ăn sáng mở sớm, đợi trời sáng hẳn rồi hãy chạy đèo.',legs:[['R0','HN','A']],bus:true,dawn:true},
+  {node:'HN',day:'t7',time:'22:00',short:'Xuất phát',title:'Lên xe giường nằm ở Hà Nội',blurb:'Hai bạn lên xe đêm, ngủ một giấc, rạng sáng là tới Hà Giang.',tip:'Đặt luôn vé chiều về chuyến 12:30–13:00 thứ 3 để kịp về nhà tối.',legs:[],night:true},
+  {node:'A',day:'cn',time:'4:00–7:30',title:'TP Hà Giang · Cột mốc Km0',short:'Cột mốc Km0',blurb:'Xuống xe lúc rạng sáng, nằm nghỉ tới 6h, ăn bánh cuốn, nhận xe và check-in cột mốc Km0.',greet:'Chào mừng tới Hà Giang!',tip:'Tới sớm thì ghé quán ăn sáng mở sớm, đợi trời sáng hẳn rồi hãy chạy đèo.',legs:[['R0','HN','A']],bus:true,dawn:true},
   {node:'E',day:'cn',time:'10:30–12:30',title:'Rừng thông Yên Minh',blurb:'Chạy một mạch qua Quản Bạ (để dành cho thứ 3), nghỉ trưa dưới rừng thông. Sáng Chủ nhật có thể gặp chợ phiên.',greet:'Nyob zoo! Ghé chợ phiên không?',tip:'Ăn trưa ở thị trấn Yên Minh, nghỉ 30 phút rồi hãy đi tiếp.',legs:[['R1','A','E']]},
   {node:'F',day:'cn',time:'13:30',title:'Thung lũng Sủng Là',blurb:'Nhà của Pao, nhà trình tường cổ và những ruộng tam giác mạch đầu mùa trắng hồng.',greet:'Hoa đang chớm nở đó!',tip:'Một số ruộng hoa thu vài chục nghìn tiền chụp ảnh, cứ vui vẻ gửi.',legs:[['R2','E','F']]},
   {node:'G',day:'cn',time:'14:30',title:'Dinh Vua Mèo',blurb:'Dinh thự họ Vương giữa thung lũng Sà Phìn, kiến trúc pha trộn độc đáo giữa núi đá.',greet:'Vào xem dinh đi hai bạn!',tip:'Mua vé tại cổng, đi xem khoảng 45 phút là đủ.',legs:[['R2','F','G']]},
   {node:'H',day:'cn',time:'16:00',title:'Cột cờ Lũng Cú',blurb:'Lên chiều muộn khi đã vắng khách, ngắm hoàng hôn ở điểm địa đầu phía Bắc.',greet:'Chào mừng tới địa đầu Tổ quốc!',tip:'Mang áo khoác, gió trên đỉnh cột cờ khá lạnh.',legs:[['R2','G','H']]},
-  {node:'I',day:'cn',time:'Tối',title:'Ngủ ở làng Lô Lô Chải',blurb:'Homestay nhà trình tường dưới chân Lũng Cú, ăn tối cùng chủ nhà bên bếp lửa.',greet:'Vào nhà sưởi lửa nào!',tip:'Đặt phòng trước, làng ít phòng mà khách khá đông.',legs:[['R2','H','I']],night:true},
+  {node:'I',day:'cn',time:'Tối',title:'Ngủ ở làng Lô Lô Chải',short:'Đêm Lô Lô Chải',blurb:'Homestay nhà trình tường dưới chân Lũng Cú, ăn tối cùng chủ nhà bên bếp lửa.',greet:'Vào nhà sưởi lửa nào!',tip:'Đặt phòng trước, làng ít phòng mà khách khá đông.',legs:[['R2','H','I']],night:true},
   {node:'I',day:'t2',time:'6:30–8:30',title:'Sương sớm Lô Lô Chải',blurb:'Dạo làng lúc sương còn phủ, ngồi cà phê ở hiên homestay. Khoảng chill nhất chuyến đi.',greet:'Chào buổi sáng, ngủ ngon không?',tip:'Dậy sớm một chút, sương tan khoảng 8h.',legs:[],dawn:true},
   {node:'J',day:'t2',time:'9:15',title:'Phố cổ Đồng Văn',blurb:'Dạo phố cổ, ăn bánh cuốn trứng hoặc cháo ấu tẩu nóng hổi.',greet:'Ăn bát cháo ấu tẩu nhé!',tip:'Ăn cháo ấu tẩu ở quán uy tín, củ ấu tẩu phải được nấu thật kỹ.',legs:[['R2','I','J']]},
   {node:'K',day:'t2',time:'10:15',title:'Đèo Mã Pì Lèng',blurb:'Dừng các điểm ngắm, cà phê nhìn xuống vực Tu Sản và dòng Nho Quế xanh ngọc.',greet:'Nhìn xuống sông kìa!',tip:'Đỗ xe đúng điểm dừng, đừng đứng sát mép vực để chụp.',legs:[['R2','J','K']]},
   {node:'L',day:'t2',time:'11:00–12:30',title:'Thuyền sông Nho Quế',blurb:'Đi thuyền giữa hẻm Tu Sản, vách đá cao hai bên, nước xanh như ngọc.',greet:'Lên thuyền thôi!',tip:'Mặc áo phao, để điện thoại trong túi chống nước.',legs:[['R2','K','L']]},
-  {node:'M',day:'t2',time:'13:00',title:'Ăn trưa ở Mèo Vạc',blurb:'Nghỉ trưa ở phố núi Mèo Vạc, nạp năng lượng trước chặng về.',greet:'Ăn thắng cố không hai bạn?',tip:'Đổ đầy xăng ở Mèo Vạc trước khi chạy về.',legs:[['R2','L','M']]},
-  {node:'N',day:'t2',time:'14:30–17:30',title:'Ngủ ở Quản Bạ (Tam Sơn)',blurb:'Khoảng 3 tiếng chạy xe về, tối nghỉ homestay nhìn ra Núi Đôi.',greet:'Về rồi, nghỉ ngơi đi nào!',tip:'Chặng dài nhất ngày, thuê xế chở sẽ đỡ mệt hơn nhiều.',legs:[['R3','M','E'],['R1','E','N']],night:true},
+  {node:'M',day:'t2',time:'13:00',title:'Ăn trưa ở Mèo Vạc',short:'Phố núi Mèo Vạc',blurb:'Nghỉ trưa ở phố núi Mèo Vạc, nạp năng lượng trước chặng về.',greet:'Ăn thắng cố không hai bạn?',tip:'Đổ đầy xăng ở Mèo Vạc trước khi chạy về.',legs:[['R2','L','M']]},
+  {node:'N',day:'t2',time:'14:30–17:30',title:'Ngủ ở Quản Bạ (Tam Sơn)',short:'Đêm Tam Sơn',blurb:'Khoảng 3 tiếng chạy xe về, tối nghỉ homestay nhìn ra Núi Đôi.',greet:'Về rồi, nghỉ ngơi đi nào!',tip:'Chặng dài nhất ngày, thuê xế chở sẽ đỡ mệt hơn nhiều.',legs:[['R3','M','E'],['R1','E','N']],night:true},
   {node:'N',day:'t3',time:'6:30',title:'Núi Đôi Cô Tiên',blurb:'Sương sớm phủ thung lũng, hai ngọn núi tròn hiện dần lên trong nắng.',greet:'Dậy sớm là đúng rồi!',tip:'Ra ruộng trước 7h để có sương đẹp nhất.',legs:[],dawn:true},
   {node:'C',day:'t3',time:'7:30',title:'Cổng Trời Quản Bạ',blurb:'Ăn sáng, cà phê ngắm toàn cảnh thung lũng Quản Bạ.',greet:'Chụp ảnh ở Cổng Trời nào!',tip:'Điểm ngắm có quán cà phê, ngồi lâu một chút cũng không sao.',legs:[['R1','N','C']]},
   {node:'D',day:'t3',time:'8:30',title:'Thạch Sơn Thần',blurb:'Rừng đá huyền bí xen những ruộng tam giác mạch ven đường.',greet:'Đá ở đây kể chuyện cổ đó!',tip:'Đi dạo nhẹ 20–30 phút là đủ, giữ sức cho chặng về.',legs:[['R1','C','D']]},
   {node:'B',day:'t3',time:'9:30',title:'Dốc Bắc Sum',blurb:'Dừng chụp cung đường ziczac lần cuối trước khi xuống thành phố.',greet:'Xuống dốc chậm thôi nhé!',tip:'Xuống dốc dài nên về số thấp, đừng bóp phanh liên tục.',legs:[['R1','D','B']]},
-  {node:'A',day:'t3',time:'10:30–13:00',title:'Về TP Hà Giang · Lên xe',blurb:'Trả xe, ăn trưa, lên xe ban ngày 12:30–13:00, về tới Hà Nội khoảng 19h–20h.',greet:'Hẹn gặp lại mùa hoa sau!',tip:'Gửi đồ ở nhà xe, có thể tắm rửa trước khi lên xe.',legs:[['R1','B','A']]}
+  {node:'A',day:'t3',time:'10:30–13:00',title:'Về TP Hà Giang · Lên xe',short:'Lên xe về',blurb:'Trả xe, ăn trưa, lên xe ban ngày 12:30–13:00, về tới Hà Nội khoảng 19h–20h.',greet:'Hẹn gặp lại mùa hoa sau!',tip:'Gửi đồ ở nhà xe, có thể tắm rửa trước khi lên xe.',legs:[['R1','B','A']]}
 ];
 const LAST=STOPS.length-1;
 
@@ -785,6 +848,7 @@ function updatePanel(i,animated){
   $('stopTitle').textContent=s.title;$('stopBlurb').textContent=s.blurb;
   const gr=$('greet');if(s.greet){gr.hidden=false;gr.textContent=`“${s.greet}”`;}else gr.hidden=true;
   $('tipText').textContent=s.tip;
+  $('mplBtn').hidden=s.node!=='K';
   if(G&&animated&&!reduce)G.fromTo('#stopCard',{y:10,rotation:-1.2},{y:0,rotation:0,duration:.5,ease:'back.out(2)'});
   rows.forEach((r,k)=>{r.classList.toggle('done',k<=i);r.classList.toggle('current',k===i);r.setAttribute('aria-current',k===i?'step':'false');});
   if(G&&animated&&!reduce){const st=rows[i].querySelector('.stamp');G.fromTo(st,{scale:2.4,rotation:-40,opacity:0},{scale:1,rotation:-8,opacity:1,duration:.55,ease:'back.out(3)'});}
@@ -881,7 +945,7 @@ $('nextBtn').addEventListener('click',()=>{if(cur===LAST)stopAuto();goNext();});
 $('prevBtn').addEventListener('click',goPrev);
 $('autoBtn').addEventListener('click',()=>{if(auto)stopAuto();else{ if(!$('finale').hidden){jump(0);} startAuto();}});
 $('replayBtn').addEventListener('click',()=>{jump(0);startAuto();});
-document.addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea'))return;if(!$('intro').hidden)return;
+document.addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea'))return;if(!$('intro').hidden||!$('mpl').hidden||!$('pass').hidden)return;
   if(e.key==='ArrowRight'){e.preventDefault();stopAuto();goNext();}else if(e.key==='ArrowLeft'){e.preventDefault();goPrev();}});
 window.addEventListener('resize',()=>{const n=NODES[STOPS[cur].node];follow(n.x);});
 
@@ -1468,7 +1532,354 @@ $('skipBtn').addEventListener('click',()=>closeIntro(true));
 $('replayIntroBtn').addEventListener('click',openIntro);
 document.addEventListener('keydown',e=>{if(!intro.hidden&&e.key==='Escape')closeIntro(false);});
 
+/* =====================================================================
+   Small storage helper (private windows can throw)
+   ===================================================================== */
+const store={get(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},
+             set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+const MPL_KEY='hgq-mpl-v1',MPL_IDX=STOPS.findIndex(s=>s.node==='K');
+let mplWon=!!(store.get(MPL_KEY)||{}).won;
+function markGold(){if(rows[MPL_IDX])rows[MPL_IDX].classList.toggle('gold',mplWon);
+  $('mplBtnLabel').textContent=mplWon?'Chơi lại vượt đèo (đã có dấu vàng ⭐)':'Thử vượt đèo Mã Pì Lèng';}
+function openOverlay(el){stopAuto();el.hidden=false;document.documentElement.style.overflow='hidden';}
+function closeOverlay(el,back){el.hidden=true;document.documentElement.style.overflow='';if(back)back.focus({preventScroll:true});}
+
+/* =====================================================================
+   MINI-GAME · Vượt đèo Mã Pì Lèng
+   Top-down road that scrolls down the screen. World coordinate w grows
+   "up the road"; a screen row y shows w = dist + (LH - y).
+   ===================================================================== */
+const Game=(()=>{
+  const LW=360,LH=600,PY=500,GOAL=9000,KM=20;
+  const ov=$('mpl'),cv=$('mplCanvas'),ctx=cv.getContext('2d');
+  const msg=$('mplMsg'),go=$('mplGo'),back=$('mplBack');
+  const keys={l:false,r:false};
+  let st=null,raf=0,last=0,parts=[];
+  const cxAt=w=>LW/2+58*Math.sin(w*.0041)+24*Math.sin(w*.0107+1.3);   /* road centre */
+  const rwAt=w=>150-22*Math.min(1,Math.max(0,w)/GOAL);                  /* road narrows near the top */
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+  function fit(){
+    const sheet=ov.querySelector('.sheet');
+    const availW=sheet.clientWidth-32-6,availH=window.innerHeight-260;
+    const k=clamp(Math.min(availW/LW,availH/LH),.55,1.25),dpr=Math.min(2,window.devicePixelRatio||1);
+    cv.style.width=Math.round(LW*k)+'px';cv.style.height=Math.round(LH*k)+'px';
+    cv.width=Math.round(LW*k*dpr);cv.height=Math.round(LH*k*dpr);
+    ctx.setTransform(k*dpr,0,0,k*dpr,0,0);
+  }
+  function reset(){
+    st={mode:'ready',dist:0,x:cxAt(LH-PY),vx:0,lives:3,inv:0,flowers:0,items:[],next:650,shake:0,flash:null,r:rnd((Date.now()%1e6)|0)};
+    parts=[];
+  }
+  function spawn(){
+    const r=st.r;
+    while(st.next<st.dist+LH+120&&st.next<GOAL-250){
+      const w=st.next,hw=rwAt(w)/2,roll=r();
+      const type=roll<.3?'flower':roll<.66?'rock':'goat';
+      const it={type,w,x:cxAt(w)+(r()*2-1)*(hw-26),rad:type==='goat'?17:type==='rock'?15:13};
+      if(type==='goat')it.vx=(r()<.5?-1:1)*(20+r()*26);
+      st.items.push(it);
+      st.next+=Math.max(130,215-75*(w/GOAL))+r()*120;
+    }
+  }
+  function crash(text){
+    st.lives--;st.inv=1.6;st.shake=.35;st.vx=0;st.flash={text,t:1.3};Snd.thud();
+    if(st.lives<=0)end('over');
+  }
+  function end(mode){
+    st.mode=mode;st.flash=null;Snd.engineStop();
+    if(mode==='win'){
+      if(!mplWon){mplWon=true;markGold();}
+      store.set(MPL_KEY,{won:true,flowers:st.flowers,at:Date.now()});
+      Snd.chime();
+      for(let i=0;i<70;i++)parts.push({x:LW/2,y:LH*.42,vx:(Math.random()*2-1)*190,vy:-Math.random()*260-60,c:['#ff4f9a','#ffc531','#11b3ae','#ffffff'][i%4],t:1.6});
+    }
+    show(mode);
+  }
+  function show(mode){
+    msg.hidden=false;back.hidden=mode==='ready';
+    const km=(Math.min(st.dist,GOAL)/GOAL*KM).toFixed(1);
+    const T={ready:['Vượt đèo Mã Pì Lèng','Lái xe máy qua 20 km đèo. Né dê và đá rơi, đừng đâm vào vách núi hay lan can bên vực. Nhặt hoa tam giác mạch để lấy điểm. Dùng phím ← → hoặc giữ nút ◀ ▶ để lái.','Xuất phát'],
+             win:['Chinh phục Mã Pì Lèng! ⭐',`Nhặt được ${st.flowers} bông tam giác mạch, còn ${st.lives} mạng. Dấu vàng đã được đóng vào Sổ hộ chiếu.`,'Chơi lại'],
+             over:['Hết mạng rồi!',`Đi được ${km} / ${KM} km. Đèo này khó thật, thử lại nhé!`,'Thử lại']}[mode];
+    $('mplMsgTitle').textContent=T[0];$('mplMsgText').textContent=T[1];go.textContent=T[2];
+    go.focus({preventScroll:true});
+  }
+  function start(){reset();st.mode='play';msg.hidden=true;Snd.init();Snd.engineStart();last=performance.now();}
+
+  function update(dt){
+    for(const p of parts){p.t-=dt;p.vy+=420*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;}
+    parts=parts.filter(p=>p.t>0);
+    if(st.flash&&(st.flash.t-=dt)<=0)st.flash=null;
+    st.shake=Math.max(0,st.shake-dt);
+    if(st.mode!=='play')return;
+    const speed=170+110*Math.min(1,st.dist/GOAL);
+    st.dist+=speed*dt;st.inv=Math.max(0,st.inv-dt);
+    const input=(keys.r?1:0)-(keys.l?1:0);
+    st.vx=clamp((st.vx+input*950*dt)*Math.pow(input?.35:.008,dt),-235,235);
+    st.x+=st.vx*dt;
+    spawn();
+    const pw=st.dist+(LH-PY),c=cxAt(pw),hw=rwAt(pw)/2;
+    /* leaving the road: rock wall on the left, guard rail + abyss on the right */
+    if(st.x<c-hw+10){st.x=c-hw+10;if(!st.inv)crash('Sát vách núi!');}
+    else if(st.x>c+hw-10){st.x=c+hw-10;if(!st.inv)crash('Suýt rơi xuống vực!');}
+    if(st.mode!=='play')return;
+    for(const it of st.items){
+      if(it.vx){const ic=cxAt(it.w),ih=rwAt(it.w)/2-16;it.x+=it.vx*dt;if(it.x<ic-ih||it.x>ic+ih){it.vx*=-1;it.x=clamp(it.x,ic-ih,ic+ih);}}
+      const dy=it.w-pw,dx=it.x-st.x;
+      if(Math.abs(dy)<it.rad+12&&Math.abs(dx)<it.rad+8){   /* a little forgiving: hitboxes sit inside the drawings */
+        if(it.type==='flower'){it.gone=true;st.flowers++;Snd.tone(988,0,.12,'triangle',.12);Snd.tone(1319,.08,.16,'triangle',.1);}
+        else if(!st.inv){it.gone=true;crash(it.type==='goat'?'Dê qua đường!':'Đá rơi!');if(st.mode!=='play')return;}
+      }
+    }
+    st.items=st.items.filter(it=>!it.gone&&it.w>st.dist-60);
+    if(st.dist>=GOAL)end('win');
+  }
+
+  /* ---- drawing ---- */
+  function edges(){
+    const L=[],R=[],C=[];
+    for(let y=-10;y<=LH+10;y+=6){const w=st.dist+(LH-y),c=cxAt(w),h=rwAt(w)/2;L.push([c-h,y]);R.push([c+h,y]);C.push([c,y,w]);}
+    return {L,R,C};
+  }
+  function poly(pts,fill){ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();}
+  function line(pts,stroke,w,dash){ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=stroke;ctx.lineWidth=w;ctx.setLineDash(dash||[]);ctx.stroke();ctx.setLineDash([]);}
+  function drawWorld(){
+    const {L,R,C}=edges();
+    /* abyss + Nho Quế river on the right */
+    const g=ctx.createLinearGradient(0,0,LW,0);g.addColorStop(0,'#1d4d49');g.addColorStop(1,'#0f2f33');
+    ctx.fillStyle=g;ctx.fillRect(0,0,LW,LH);
+    const river=C.map(([c,y,w])=>[c+rwAt(w)/2+78+22*Math.sin(w*.006),y]);
+    line(river,'#11b3ae',30);line(river,'rgba(255,255,255,.35)',3,[10,18]);
+    for(let w=Math.floor(st.dist/70)*70;w<st.dist+LH+70;w+=70){const y=LH-(w-st.dist),x=cxAt(w)+rwAt(w)/2+30+((w*7)%40);
+      ctx.fillStyle='#2f7a52';ctx.beginPath();ctx.arc(x,y,9,0,7);ctx.fill();ctx.fillStyle='#3c8a4a';ctx.beginPath();ctx.arc(x-4,y-3,6,0,7);ctx.fill();}
+    /* cliff shadow along the drop */
+    poly([...R,...R.map(([x,y])=>[x+26,y]).reverse()],'rgba(5,12,20,.45)');
+    /* karst rock wall on the left */
+    poly([[0,-10],...L,[0,LH+10]],'#8d9277');
+    for(let w=Math.floor(st.dist/46)*46;w<st.dist+LH+46;w+=46){const y=LH-(w-st.dist),x=cxAt(w)-rwAt(w)/2;
+      ctx.strokeStyle='rgba(60,64,48,.45)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x-6,y);ctx.lineTo(x-34-((w*3)%30),y-18);ctx.stroke();}
+    line(L,'#6f9a5a',6);
+    /* road */
+    poly([...L,...R.slice().reverse()],'#4b4d63');
+    line(L,'#e9e7f5',3);line(R,'#e9e7f5',3);
+    for(let w=Math.floor(st.dist/44)*44;w<st.dist+LH+44;w+=44){                   /* dashed centre line */
+      const y0=LH-(w-st.dist),y1=y0-22;ctx.strokeStyle='#ffc531';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cxAt(w),y0);ctx.lineTo(cxAt(w+22),y1);ctx.stroke();}
+    /* guard rail along the abyss: rail + red/white posts */
+    line(R.map(([x,y])=>[x+7,y]),'#c9ced8',4);
+    for(let w=Math.floor(st.dist/34)*34;w<st.dist+LH+34;w+=34){const y=LH-(w-st.dist),x=cxAt(w)+rwAt(w)/2+7;
+      ctx.fillStyle=(w/34)%2?'#e8423f':'#ffffff';ctx.fillRect(x-3,y-3,6,6);}
+  }
+  function drawItem(it){
+    const x=it.x,y=LH-(it.w-st.dist);
+    ctx.save();ctx.translate(x,y);
+    ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(3,5,it.rad,it.rad*.55,0,0,7);ctx.fill();
+    if(it.type==='flower'){
+      const cs=['#ff4f9a','#ffffff','#ff8fc0','#ffffff','#e86bb0'];
+      ctx.fillStyle='#3c8a4a';ctx.beginPath();ctx.arc(0,0,9,0,7);ctx.fill();
+      cs.forEach((c,i)=>{const a=i/5*6.283;ctx.fillStyle=c;ctx.beginPath();ctx.arc(Math.cos(a)*6,Math.sin(a)*6,4.2,0,7);ctx.fill();});
+      ctx.fillStyle='#ffc531';ctx.beginPath();ctx.arc(0,0,3,0,7);ctx.fill();
+    }else if(it.type==='rock'){
+      ctx.fillStyle='#8a8f9e';ctx.strokeStyle='#1d2160';ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.moveTo(-15,4);ctx.lineTo(-11,-9);ctx.lineTo(2,-14);ctx.lineTo(14,-6);ctx.lineTo(15,7);ctx.lineTo(3,13);ctx.lineTo(-10,12);ctx.closePath();ctx.fill();ctx.stroke();
+      ctx.fillStyle='#b4b8c4';ctx.beginPath();ctx.moveTo(-9,-6);ctx.lineTo(1,-11);ctx.lineTo(6,-5);ctx.lineTo(-4,-2);ctx.closePath();ctx.fill();
+    }else{                                                                             /* goat, seen from above */
+      const d=it.vx>0?1:-1;ctx.scale(d,1);ctx.strokeStyle='#1d2160';ctx.lineWidth=2.2;
+      ctx.fillStyle='#f4f1ea';ctx.beginPath();ctx.ellipse(-3,0,15,10,0,0,7);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#e6e0d4';ctx.beginPath();ctx.ellipse(13,0,7,6,0,0,7);ctx.fill();ctx.stroke();
+      ctx.strokeStyle='#6b5a4a';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(15,-4);ctx.lineTo(21,-8);ctx.moveTo(15,4);ctx.lineTo(21,8);ctx.stroke();
+      ctx.fillStyle='#1d2160';ctx.beginPath();ctx.arc(17,-2,1.3,0,7);ctx.arc(17,2,1.3,0,7);ctx.fill();
+    }
+    ctx.restore();
+  }
+  function drawBike(){
+    if(st.inv&&Math.floor(st.inv*10)%2)return;                                      /* blink while invulnerable */
+    ctx.save();ctx.translate(st.x,PY);ctx.rotate(st.vx/235*.32);
+    ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(4,6,15,30,0,0,7);ctx.fill();
+    ctx.fillStyle='#14151c';ctx.fillRect(-4,-32,8,15);ctx.fillRect(-4,16,8,15);           /* tyres */
+    ctx.fillStyle='#1d2160';ctx.strokeStyle='#0b0c22';ctx.lineWidth=2;
+    ctx.beginPath();ctx.roundRect(-9,-22,18,44,8);ctx.fill();ctx.stroke();               /* body */
+    ctx.strokeStyle='#c9ced8';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-14,-20);ctx.lineTo(14,-20);ctx.stroke();  /* handlebar */
+    ctx.fillStyle='#fff6c0';ctx.beginPath();ctx.arc(0,-31,3,0,7);ctx.fill();             /* headlight */
+    /* rider (pink turban) and passenger (navy cap) */
+    ctx.fillStyle='#20246a';ctx.beginPath();ctx.ellipse(0,10,11,7,0,0,7);ctx.fill();
+    ctx.fillStyle='#14152e';ctx.beginPath();ctx.arc(0,9,6.5,0,7);ctx.fill();ctx.fillStyle='#e8423f';ctx.beginPath();ctx.arc(0,9,2,0,7);ctx.fill();
+    ctx.fillStyle='#2a2f78';ctx.beginPath();ctx.ellipse(0,-6,11,7,0,0,7);ctx.fill();
+    ctx.fillStyle='#ff4f9a';ctx.beginPath();ctx.arc(0,-7,7,0,7);ctx.fill();ctx.fillStyle='#ffc531';ctx.beginPath();ctx.arc(0,-7,4,0,7);ctx.fill();
+    ctx.restore();
+  }
+  function heart(x,y,on){ctx.save();ctx.translate(x,y);ctx.fillStyle=on?'#ff4f9a':'rgba(255,255,255,.25)';ctx.strokeStyle='#1d2160';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(0,5);ctx.bezierCurveTo(-11,-3,-6,-11,0,-5);ctx.bezierCurveTo(6,-11,11,-3,0,5);ctx.fill();ctx.stroke();ctx.restore();}
+  function drawHud(){
+    ctx.fillStyle='rgba(14,16,48,.72)';ctx.beginPath();ctx.roundRect(8,8,LW-16,46,12);ctx.fill();
+    for(let i=0;i<3;i++)heart(26+i*24,30,i<st.lives);
+    const p=Math.min(1,st.dist/GOAL),bx=104,bw=LW-104-78;
+    ctx.fillStyle='rgba(255,255,255,.18)';ctx.beginPath();ctx.roundRect(bx,24,bw,12,6);ctx.fill();
+    ctx.fillStyle='#ffc531';ctx.beginPath();ctx.roundRect(bx,24,Math.max(12,bw*p),12,6);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='700 11px "Baloo 2", sans-serif';ctx.textAlign='center';
+    ctx.fillText(`${(p*KM).toFixed(1)} / ${KM} km`,bx+bw/2,20);
+    ctx.textAlign='right';ctx.font='800 16px "Baloo 2", sans-serif';ctx.fillStyle='#ff8fc0';ctx.fillText(`✿ ${st.flowers}`,LW-18,36);
+    if(st.flash){ctx.globalAlpha=Math.min(1,st.flash.t*2);ctx.textAlign='center';ctx.font='800 26px "Baloo 2", sans-serif';
+      ctx.lineWidth=5;ctx.strokeStyle='#1d2160';ctx.strokeText(st.flash.text,LW/2,110);ctx.fillStyle='#ffc531';ctx.fillText(st.flash.text,LW/2,110);ctx.globalAlpha=1;}
+  }
+  function draw(){
+    ctx.save();
+    if(st.shake)ctx.translate((Math.random()*2-1)*6*st.shake/.35,(Math.random()*2-1)*6*st.shake/.35);
+    drawWorld();
+    for(const it of st.items){const y=LH-(it.w-st.dist);if(y>-30&&y<LH+30)drawItem(it);}
+    drawBike();
+    for(const p of parts){ctx.fillStyle=p.c;ctx.globalAlpha=Math.min(1,p.t);ctx.fillRect(p.x-3,p.y-3,6,6);}
+    ctx.globalAlpha=1;ctx.restore();
+    drawHud();
+  }
+  function loop(now){
+    if(ov.hidden){raf=0;return;}
+    const dt=Math.min(.05,(now-last)/1000);last=now;
+    update(dt);draw();raf=requestAnimationFrame(loop);
+  }
+
+  function open(){
+    openOverlay(ov);fit();reset();show('ready');draw();
+    last=performance.now();if(!raf)raf=requestAnimationFrame(loop);
+  }
+  function close(){keys.l=keys.r=false;Snd.engineStop();closeOverlay(ov,$('mplBtn'));}
+
+  /* controls: keyboard, on-screen pad, or tapping the left/right half of the road */
+  go.addEventListener('click',start);
+  back.addEventListener('click',close);
+  $('mplClose').addEventListener('click',close);
+  const hold=(el,k)=>{
+    const on=e=>{e.preventDefault();keys[k]=true;el.classList.add('on');if(el.setPointerCapture&&e.pointerId!==undefined)try{el.setPointerCapture(e.pointerId);}catch(_){}};
+    const off=()=>{keys[k]=false;el.classList.remove('on');};
+    el.addEventListener('pointerdown',on);['pointerup','pointercancel','lostpointercapture'].forEach(t=>el.addEventListener(t,off));
+    el.addEventListener('contextmenu',e=>e.preventDefault());
+  };
+  hold($('mplL'),'l');hold($('mplR'),'r');
+  let cvKey=null;
+  cv.addEventListener('pointerdown',e=>{if(st.mode!=='play')return;const r=cv.getBoundingClientRect();cvKey=e.clientX<r.left+r.width/2?'l':'r';keys[cvKey]=true;});
+  ['pointerup','pointercancel','pointerleave'].forEach(t=>cv.addEventListener(t,()=>{if(cvKey){keys[cvKey]=false;cvKey=null;}}));
+  document.addEventListener('keydown',e=>{
+    if(ov.hidden)return;
+    const k=e.key;
+    if(k==='Escape'){e.preventDefault();close();return;}
+    if(k==='ArrowLeft'||k==='a'||k==='A'){e.preventDefault();keys.l=true;}
+    else if(k==='ArrowRight'||k==='d'||k==='D'){e.preventDefault();keys.r=true;}
+    else if((k===' '||k==='Enter')&&!msg.hidden&&!msg.contains(document.activeElement)){e.preventDefault();start();}   /* focused buttons click themselves */
+  });
+  document.addEventListener('keyup',e=>{
+    if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')keys.l=false;
+    if(e.key==='ArrowRight'||e.key==='d'||e.key==='D')keys.r=false;
+  });
+  window.addEventListener('blur',()=>{keys.l=keys.r=false;});
+  window.addEventListener('resize',()=>{if(!ov.hidden){fit();draw();}});
+  return {open};
+})();
+$('mplBtn').addEventListener('click',Game.open);
+
+/* =====================================================================
+   PASSPORT IMAGE · 1080×1350 PNG to save or share
+   ===================================================================== */
+const Passport=(()=>{
+  const W=1080,H=1350,ov=$('pass'),img=$('passImg'),note=$('passNote'),save=$('passSave'),share=$('passShare');
+  let url=null,file=null,opener=null;
+  function rr(c,x,y,w,h,r){c.beginPath();c.roundRect(x,y,w,h,r);}
+  function wrapLines(c,text,maxW,maxLines){
+    const words=text.split(' '),out=[];let line='';
+    for(const w of words){const t=line?line+' '+w:w;if(c.measureText(t).width<=maxW||!line)line=t;else{out.push(line);line=w;}}
+    if(line)out.push(line);
+    if(out.length>maxLines){out.length=maxLines;out[maxLines-1]+='…';}
+    return out;
+  }
+  function star(c,x,y,r){c.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rad=i%2?r*.45:r;c.lineTo(x+Math.cos(a)*rad,y+Math.sin(a)*rad);}c.closePath();
+    c.fillStyle='#ffc531';c.fill();c.lineWidth=4;c.strokeStyle='#1d2160';c.stroke();}
+  /* the 4 friends drawn with the same person() art as the page, rendered through an SVG image */
+  function friendsImage(){
+    const ppl=[[BOY,60],[GIRL,150],[GIRL2,330],[BOY2,420]];
+    const body=ppl.map(([p,x])=>`<g transform="translate(${x},250)">${person(Object.assign({},p,{scale:3.3}))}</g>`).join('');
+    const svgStr=`<svg xmlns="http://www.w3.org/2000/svg" width="480" height="260" viewBox="0 0 480 260">${body}</svg>`;
+    return new Promise(res=>{const im=new Image();im.onload=()=>res(im);im.onerror=()=>res(null);
+      im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svgStr);});
+  }
+  async function draw(withFriends){
+    try{await Promise.all(['800 60px "Baloo 2"','700 30px "Baloo 2"','600 24px "Be Vietnam Pro"','40px "Patrick Hand"'].map(f=>document.fonts.load(f)));}catch(e){}
+    const cv=document.createElement('canvas');cv.width=W;cv.height=H;const c=cv.getContext('2d');
+    /* night-indigo ground with the page's diamond motif */
+    c.fillStyle='#20245e';c.fillRect(0,0,W,H);
+    c.strokeStyle='rgba(255,255,255,.06)';c.lineWidth=2;
+    for(let y=0;y<H+64;y+=64)for(let x=0;x<W+64;x+=64){c.beginPath();c.moveTo(x+32,y+6);c.lineTo(x+58,y+32);c.lineTo(x+32,y+58);c.lineTo(x+6,y+32);c.closePath();c.stroke();}
+    /* header */
+    c.textAlign='center';c.textBaseline='alphabetic';
+    c.fillStyle='#ffc531';c.font='700 30px "Baloo 2", sans-serif';c.fillText('HỘ CHIẾU PHIÊU LƯU · 3 NGÀY 2 ĐÊM',W/2,92);
+    c.font='800 110px "Baloo 2", sans-serif';c.textAlign='left';
+    const a='Hà Giang ',b='Quest',tw=c.measureText(a).width+c.measureText(b).width,tx=(W-tw)/2,ty=196;
+    [[9,'rgba(10,12,40,.6)'],[5,'#ff4f9a']].forEach(([o,col])=>{c.fillStyle=col;c.fillText(a+b,tx+o,ty+o);});
+    c.fillStyle='#ffffff';c.fillText(a,tx,ty);c.fillStyle='#ffc531';c.fillText(b,tx+c.measureText(a).width,ty);
+    c.textAlign='center';c.fillStyle='#c7cbff';c.font='600 30px "Be Vietnam Pro", sans-serif';
+    c.fillText('10 – 13/10/2026 · 4 người · 2 Hà Tĩnh + 2 Hà Nội',W/2,252);
+    c.font='800 32px "Baloo 2", sans-serif';const route='Đức Thọ  →  Hà Nội  →  Hà Giang',rw=c.measureText(route).width+64;
+    rr(c,(W-rw)/2,282,rw,62,31);c.fillStyle='rgba(8,10,36,.55)';c.fill();c.lineWidth=3;c.strokeStyle='rgba(255,255,255,.4)';c.stroke();
+    c.fillStyle='#ffffff';c.fillText(route,W/2,324);
+    /* white passport card */
+    const cx0=60,cy0=372,cw=960,ch=860;
+    rr(c,cx0+12,cy0+12,cw,ch,40);c.fillStyle='rgba(10,12,40,.55)';c.fill();
+    rr(c,cx0,cy0,cw,ch,40);c.fillStyle='#ffffff';c.fill();c.lineWidth=6;c.strokeStyle='#1d2160';c.stroke();
+    if(withFriends){const fi=await friendsImage();if(fi)c.drawImage(fi,(W-406)/2,cy0+22,406,220);}
+    c.font='700 28px "Baloo 2", sans-serif';c.fillStyle='#5b5f8f';
+    c.fillText('2 bạn Hà Tĩnh',W/2-120,cy0+276);c.fillText('2 bạn Hà Nội',W/2+120,cy0+276);
+    rr(c,W/2-2,cy0+248,4,36,2);c.fillStyle='#e3e5f5';c.fill();
+    /* 18 stamps, coloured by day like the passport log */
+    const done=$('finale').hidden?cur+1:STOPS.length,cols=6,cellW=150,cellH=160,gx=(W-cols*cellW)/2,gy=cy0+306;
+    STOPS.forEach((s,i)=>{
+      const col=i%cols,row=Math.floor(i/cols),x=gx+col*cellW+cellW/2,y=gy+row*cellH+48,ok=i<done;
+      c.save();c.translate(x,y);c.rotate(((i*37)%17-8)*Math.PI/180);
+      c.beginPath();c.arc(0,0,44,0,7);
+      if(ok){c.fillStyle=DAYS[s.day].color;c.fill();c.lineWidth=5;c.strokeStyle='#1d2160';c.stroke();}
+      else{c.fillStyle='#ffffff';c.fill();c.setLineDash([9,7]);c.lineWidth=4;c.strokeStyle='#b9bce0';c.stroke();c.setLineDash([]);}
+      c.fillStyle=ok?'#ffffff':'#9a9dc8';c.font='800 40px "Baloo 2", sans-serif';c.textBaseline='middle';c.fillText(String(i+1),0,3);
+      c.restore();
+      if(i===MPL_IDX&&mplWon)star(c,x+36,y-33,21);
+      c.fillStyle='#1d2160';c.font='600 21px "Be Vietnam Pro", sans-serif';c.textBaseline='alphabetic';
+      wrapLines(c,s.short||s.title.split(' · ')[0],cellW-10,2).forEach((t,k)=>c.fillText(t,x,y+76+k*25));
+    });
+    /* card footer */
+    const fy=cy0+ch-40;   /* below the 3rd stamp row (ends at gy+3*cellH = cy0+786) */
+    c.textAlign='left';c.font='800 32px "Baloo 2", sans-serif';c.fillStyle='#1d2160';c.fillText(`${done} / ${STOPS.length} con dấu`,cx0+44,fy);
+    c.textAlign='right';c.font='700 26px "Baloo 2", sans-serif';
+    if(mplWon){c.fillStyle='#1d2160';c.fillText('Đã chinh phục đèo Mã Pì Lèng',cx0+cw-44,fy);const mw=c.measureText('Đã chinh phục đèo Mã Pì Lèng').width;star(c,cx0+cw-44-mw-26,fy-10,16);}
+    else{c.fillStyle='#9a9dc8';c.fillText('Mã Pì Lèng: chưa thử thách',cx0+cw-44,fy);}
+    /* sign-off */
+    c.textAlign='center';c.fillStyle='#ff8fc0';c.font='40px "Patrick Hand", cursive';c.fillText('Ua tsaug! Hẹn mùa hoa sau nhé.',W/2,H-38);
+    return cv;
+  }
+  function toBlob(cv){return new Promise((res,rej)=>{try{cv.toBlob(b=>b?res(b):rej(new Error('blob')),'image/png');}catch(e){rej(e);}});}
+  async function open(from){
+    opener=from;openOverlay(ov);
+    note.textContent='Đang vẽ ảnh…';save.disabled=true;share.hidden=true;img.removeAttribute('src');
+    let blob;
+    try{blob=await toBlob(await draw(true));}
+    catch(e){blob=await toBlob(await draw(false));}      /* some browsers taint canvases that drew an SVG image */
+    if(ov.hidden)return;
+    if(url)URL.revokeObjectURL(url);
+    url=URL.createObjectURL(blob);img.src=url;
+    file=new File([blob],'ha-giang-quest-ho-chieu.png',{type:'image/png'});
+    const canShare=!!(navigator.canShare&&navigator.canShare({files:[file]}));
+    share.hidden=!canShare;save.disabled=false;
+    note.textContent=canShare?'Bấm Chia sẻ để gửi thẳng vào Zalo, Messenger… hoặc Lưu ảnh về máy.':'Bấm Lưu ảnh để tải về máy rồi gửi vào nhóm chat.';
+    (canShare?share:save).focus({preventScroll:true});
+  }
+  function close(){closeOverlay(ov,opener);}
+  save.addEventListener('click',()=>{if(!url)return;const a=document.createElement('a');a.href=url;a.download='ha-giang-quest-ho-chieu.png';document.body.appendChild(a);a.click();a.remove();});
+  share.addEventListener('click',()=>{if(file)navigator.share({files:[file],title:'Hà Giang Quest',text:'Hộ chiếu chuyến Hà Giang 10–13/10 của 4 đứa mình 🏔️'}).catch(()=>{});});
+  $('passClose').addEventListener('click',close);
+  ov.addEventListener('click',e=>{if(e.target===ov)close();});
+  document.addEventListener('keydown',e=>{if(!ov.hidden&&e.key==='Escape'){e.preventDefault();close();}});
+  return {open};
+})();
+$('passBtn').addEventListener('click',()=>Passport.open($('passBtn')));
+$('passBtn2').addEventListener('click',()=>Passport.open($('passBtn2')));
+
 /* ---------- Boot ---------- */
+markGold();
 jump(0);
 if(G&&!reduce){
   G.from('#lyPins > g',{scale:0,transformOrigin:'50% 50%',duration:.5,stagger:.03,ease:'back.out(2)',delay:.2});
