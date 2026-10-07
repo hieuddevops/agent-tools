@@ -862,10 +862,10 @@ window.addEventListener('resize',()=>{const n=NODES[STOPS[cur].node];follow(n.x)
    ===================================================================== */
 const ORIGINS={
   hn:{key:'hn',name:'Hà Nội',km:300,dep:22*60,depLabel:'22:00',sign:'Hà Nội ~300 km',from:'Hà Nội',signTop:'HÀ NỘI'},
-  ht:{key:'ht',name:'Đức Thọ',km:610,dep:14*60,depLabel:'14:00',sign:'Đức Thọ ~610 km',from:'Đức Thọ',signTop:'ĐỨC THỌ · HÀ TĨNH',home:'khoảng 3h sáng thứ 4',
+  ht:{key:'ht',name:'Đức Thọ',km:610,dep:14*60,depLabel:'14:00',via:{name:'Hà Nội',km:310,arr:20*60,dep:22*60,depLabel:'22:00'},sign:'Đức Thọ ~610 km',from:'Đức Thọ',signTop:'ĐỨC THỌ · HÀ TĨNH',home:'khoảng 3h sáng thứ 4',
     blurb:'Xe khách đón hai bạn bên sông La Giang (Đức Thọ, Hà Tĩnh) lúc 14:00 chiều thứ 7, chạy khoảng 310 km ra Hà Nội (tầm 6 tiếng), tới bến Mỹ Đình khoảng 20:00. Ăn tối rồi lên xe giường nằm 22:00, chạy xuyên đêm 300 km nữa, rạng sáng là tới Hà Giang.',
     tip:'Đặt trước cả hai chặng, chặng Hà Nội – Hà Giang chọn nhà xe đón ở Mỹ Đình cho đỡ phải di chuyển. Chiều về: xe Hà Giang 12:30–13:00 về Hà Nội tầm 19h–20h, rồi bắt xe đêm 21:00–22:00 về Đức Thọ.',
-    back:'Trả xe, ăn trưa, lên xe 12:30–13:00 về Hà Nội (tới tầm 19h–20h), ăn tối rồi bắt xe đêm 21:00–22:00 về Đức Thọ, tới nhà khoảng 3h sáng thứ 4.'}
+    back:'Chiều về 2 chặng: trả xe, ăn trưa, lên xe 12:30–13:00 từ Hà Giang về Hà Nội (tới bến Mỹ Đình tầm 19h–20h), ăn tối rồi bắt xe đêm 21:00–22:00 từ Hà Nội về Đức Thọ, Hà Tĩnh, tới nhà khoảng 3h sáng thứ 4.'}
 };
 let origin=ORIGINS.hn;
 function applyOrigin(o){
@@ -875,8 +875,8 @@ function applyOrigin(o){
   $('originSign').textContent=o.sign;
   $('originLabel').textContent=nm;
   $('finaleTitle').textContent=`Về tới ${nm}!`;
-  $('finaleText').textContent=o.home
-    ?`18 con dấu, 3 ngày 2 đêm trên cao nguyên đá, về tới nhà ${o.home}.`
+  $('finaleText').textContent=o.via
+    ?`18 con dấu, 3 ngày 2 đêm trên cao nguyên đá. Chiều về Hà Giang → ${o.via.name} → ${o.name}, tới nhà ${o.home}.`
     :'18 con dấu, 3 ngày 2 đêm trên cao nguyên đá, kịp về nhà tối thứ 3 khoảng 19h–20h.';
   Object.assign(STOPS[0],{time:o.depLabel,title:`Xuất phát từ ${o.name}`,
     blurb:o.blurb||`Xe đón hai bạn lúc ${o.depLabel} tối thứ 7, chạy xuyên đêm khoảng ${o.km} km, rạng sáng là tới Hà Giang.`,
@@ -980,8 +980,9 @@ function buildScene(o){
   let mid='';
   [120,560,1000,1440,1880,2320].forEach(lx=>{mid+=`<g><rect x="${lx-3}" y="300" width="6" height="170" class="f-mid"/><path d="M${lx},306 q0,-16 28,-16 h8" fill="none" class="s-mid" stroke-width="5"/><circle class="glow" cx="${lx+38}" cy="300" r="74" fill="url(#glowG)"/><rect class="glow" x="${lx+29}" y="292" width="18" height="8" rx="3" fill="#ffe7a3"/></g>`;});
   const sign=(sx,t1,t2,c,w)=>{w=w||188;return `<g transform="translate(${sx},468)"><rect x="-3" y="-120" width="6" height="120" class="f-mid"/><rect x="${w-31}" y="-120" width="6" height="120" class="f-mid"/><rect x="-14" y="-176" width="${w}" height="62" rx="8" fill="${c||'#1f7a4d'}" stroke="#fff" stroke-width="3"/><text x="${w/2-14}" y="-151" text-anchor="middle" font-family="Baloo 2, sans-serif" font-weight="800" font-size="20" fill="#fff">${t1}</text><text x="${w/2-14}" y="-128" text-anchor="middle" font-family="Be Vietnam Pro, sans-serif" font-weight="700" font-size="14" fill="#fff">${t2}</text></g>`;};
-  mid+=sign(150,o.signTop,`Hà Giang ${o.km} km →`,undefined,Math.max(188,o.signTop.length*13+30));
-  mid+=sign(2700,'Hướng Hà Giang',`còn ${Math.round(o.km*.66)} km`);
+  const legKm=o.via?o.km-o.via.km:o.km;
+  mid+=sign(150,o.signTop,o.via?`Hà Nội ${o.via.km} km →`:`Hà Giang ${o.km} km →`,undefined,Math.max(188,o.signTop.length*13+30));
+  mid+=sign(2700,'Hướng Hà Giang',`còn ${Math.round(legKm*.66)} km`);
   mid+=sign(3950,'TP Tuyên Quang','chào mừng quý khách','#2563a8');
   mid+=sign(5150,'Hà Giang','còn 50 km');
   for(let fx=2900;fx<5000;fx+=rv(260,420))mid+=`<path d="M${fx},468 h${rv(160,260).toFixed(0)} l-14,-10 h${-rv(140,220).toFixed(0)} Z" class="f-ground" opacity=".9"/>`;
@@ -1015,8 +1016,10 @@ function buildScene(o){
   E={car:$('sCar'),bob:$('sCarBob'),beam:$('sBeam'),rd:$('sRD'),fd:$('sFD'),far:$('sFar'),mid:$('sMid'),near:$('sNear'),dash:$('sDash'),
      stars:$('sStars'),moon:$('sMoon'),sun:$('sSun'),driver:$('sDriver'),bub:$('sBub'),fx:$('sFx'),paxG:$('sPaxG'),paxB:$('sPaxB'),
      duo:$('sDuo'),dGirl:$('sDuoGirl'),dBoy:$('sDuoBoy'),dCase:$('sDuoCase')};
-  setSkyVars(SKY.night);
+  setSkyVars(o.via?SKY.day:SKY.night);
   if(G){
+    /* afternoon pickup: sun up, no moon/stars/street lights/headlights yet */
+    if(o.via){G.set(E.sun,{x:760,y:220});G.set([E.moon,E.stars,E.beam,...scene.querySelectorAll('.glow')],{opacity:0});}
     G.set(E.car,{x:-560,y:548});
     G.set(E.duo,{x:1400,y:642});
     G.set(E.driver,{x:613,y:600,scale:.72,opacity:0,transformOrigin:'50% 100%'});
@@ -1067,8 +1070,9 @@ function routeShow(from,to,km){$('route').hidden=false;$('routeFrom').textConten
 
 function carTimeline(o){
   buildScene(o);
-  $('introHud').hidden=false;$('routeChip').textContent=`${o.from} → Hà Giang`;$('route').hidden=true;
-  const clk={m:o.dep-8},km={k:o.km};renderClock(clk.m);
+  const V=o.via,legKm=V?o.km-V.km:o.km;
+  $('introHud').hidden=false;$('routeChip').textContent=V?`${o.from} → ${V.name} → Hà Giang`:`${o.from} → Hà Giang`;$('route').hidden=true;
+  const clk={m:o.dep-8},km={k:legKm};renderClock(clk.m);
   const t=G.timeline({onComplete:()=>closeIntro(true)});
   const on=(s,fn)=>t.call(fn,null,s);
   t.to(fadeEl,{opacity:0,duration:.6},0);
@@ -1132,8 +1136,35 @@ function carTimeline(o){
   t.to(E.fd,{scaleX:1,duration:.25},20.45);
   on(20.7,()=>Snd.thud());
   /* 15 seconds, night → dawn */
-  const D0=21.05,DUR=15,ez='power1.inOut';
-  on(D0,()=>{caption(`${o.depLabel} · Lên đường!`);E.car.classList.add('driving');Snd.engineStart();routeShow(o.from,'Hà Giang',o.km);});
+  const D1=21.05,ez='power1.inOut';
+  /* via Hà Nội: afternoon leg to Mỹ Đình, sunset on the way, then change to the sleeper bus */
+  if(V){
+    const k1={k:V.km};
+    on(D1,()=>{caption(`${o.depLabel} · Lên đường ra ${V.name}!`);E.car.classList.add('driving');Snd.engineStart();routeShow(o.from,V.name,V.km);});
+    t.to(E.car,{x:600,duration:1.6,ease:'power2.inOut'},D1);
+    t.to(E.far,{x:-600,duration:6.5,ease:ez},D1);
+    t.to(E.mid,{x:-1300,duration:6.5,ease:ez},D1);
+    t.to(E.near,{x:-2000,duration:6.5,ease:ez},D1);
+    t.to(E.dash,{attr:{'stroke-dashoffset':-2500},duration:6.5,ease:ez},D1);
+    t.to(E.bob,{y:-2,duration:.22,yoyo:true,repeat:25,ease:'sine.inOut'},D1+.4);
+    t.to(clk,{m:V.arr,duration:6.5,ease:ez,onUpdate:()=>renderClock(clk.m)},D1);
+    t.to(k1,{k:0,duration:6.5,ease:ez,onUpdate:()=>renderKm(k1.k,V.km)},D1);
+    t.to(E.sun,{y:760,duration:4,ease:'power1.in'},D1+1.5);
+    t.to(intro,Object.assign(sky(SKY.pre),{duration:2,ease:'none'}),D1+2.4);
+    t.to(intro,Object.assign(sky(SKY.night),{duration:2,ease:'none'}),D1+4.4);
+    t.to([E.moon,E.stars,E.beam,...scene.querySelectorAll('.glow')],{opacity:1,duration:1.6},D1+4.4);
+    on(D1+1.8,()=>caption('Theo cao tốc Bắc – Nam ra Hà Nội'));
+    on(D1+2.4,()=>say(560,430,'Ra Hà Nội rồi mới đổi xe lên Hà Giang nhé!',1.8));
+    on(D1+4,()=>caption('Hoàng hôn qua Thanh Hóa, Ninh Bình'));
+    on(D1+6.5,()=>{caption(`20:00 · Tới bến xe Mỹ Đình, ${V.name}`);E.car.classList.remove('driving');Snd.engineStop();});
+    t.to(fadeEl,{opacity:1,duration:.5},D1+7.2);
+    on(D1+7.7,()=>{caption(`Ăn tối, ${V.depLabel} lên xe giường nằm đi Hà Giang`);
+      G.set([E.far,E.mid,E.near],{x:0});G.set(E.dash,{attr:{'stroke-dashoffset':0}});clk.m=V.dep;renderClock(clk.m);});
+    t.to(fadeEl,{opacity:0,duration:.6},D1+8.6);
+  }
+  const D0=V?D1+9.4:D1,DUR=15;
+  on(D0,()=>{caption(V?`${V.depLabel} · Xe giường nằm lên đường đi Hà Giang!`:`${o.depLabel} · Lên đường!`);E.car.classList.add('driving');Snd.engineStart();
+    routeShow(V?V.name:o.from,'Hà Giang',legKm);});
   t.to(E.car,{x:600,duration:1.6,ease:'power2.inOut'},D0);
   t.to(E.far,{x:-2600,duration:DUR,ease:ez},D0);
   t.to(E.mid,{x:-5600,duration:DUR,ease:ez},D0);
@@ -1141,7 +1172,7 @@ function carTimeline(o){
   t.to(E.dash,{attr:{'stroke-dashoffset':-7000},duration:DUR,ease:ez},D0);
   t.to(E.bob,{y:-2,duration:.22,yoyo:true,repeat:65,ease:'sine.inOut'},D0+.4);
   t.to(clk,{m:28*60+30,duration:DUR,ease:ez,onUpdate:()=>renderClock(clk.m)},D0);
-  t.to(km,{k:0,duration:DUR,ease:ez,onUpdate:()=>renderKm(km.k,o.km)},D0);
+  t.to(km,{k:0,duration:DUR,ease:ez,onUpdate:()=>renderKm(km.k,legKm)},D0);
   t.to(intro,Object.assign(sky(SKY.pre),{duration:3.2,ease:'none'}),D0+5);
   t.to(intro,Object.assign(sky(SKY.dawn),{duration:3,ease:'none'}),D0+8.4);
   t.to(intro,Object.assign(sky(SKY.day),{duration:3,ease:'none'}),D0+11.6);
