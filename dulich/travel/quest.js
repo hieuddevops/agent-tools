@@ -31,7 +31,7 @@ function makeProjection(latlngs){
 
 /* Cut each day's route into one segment per stamp, using the leg distances to find where each stop sits on the line. */
 function buildSegments(trip,plan,stamps,P){
-  const pos=stamps.map(s=>{const st=trip.stops.find(x=>x.id===s.id);return P([st.lat,st.lng]);});
+  const pos=stamps.map(s=>{const st=V.stopById(trip,s.id);return P([st.lat,st.lng]);});
   const segs=[null];let k=1;
   plan.days.forEach(d=>{
     const G=d.geom.map(P),cum=[0];for(let i=1;i<G.length;i++)cum.push(cum[i-1]+Math.sqrt(dist2(G[i-1],G[i])));
@@ -55,11 +55,11 @@ function buildSegments(trip,plan,stamps,P){
 function draw(){
   const {trip,plan,stamps}=Q;
   svg.innerHTML='';
-  const all=[];plan.days.forEach(d=>d.geom.forEach(p=>all.push(p)));trip.stops.forEach(s=>all.push([s.lat,s.lng]));
+  const all=[];plan.days.forEach(d=>d.geom.forEach(p=>all.push(p)));V.allStops(trip).forEach(s=>all.push([s.lat,s.lng]));
   const P=makeProjection(all);
   const {pos,segs}=buildSegments(trip,plan,stamps,P);
   Q.pos=pos;Q.segs=segs;
-  const r=rnd(trip.stops.length*977+Math.round(all[0][0]*1000));
+  const r=rnd(V.allStops(trip).length*977+Math.round(all[0][0]*1000));
   /* land, soft fields */
   el('rect',{x:0,y:0,width:W,height:H,fill:'#a8d86e'},svg);
   const land=el('g',{},svg);
@@ -99,7 +99,7 @@ function draw(){
   const placed=[];
   stamps.forEach((s,i)=>{
     if(s.ret){Q.pins.push(Q.pins[0]);return;}
-    const [x,y]=pos[i],st=trip.stops.find(t=>t.id===s.id);
+    const [x,y]=pos[i],st=V.stopById(trip,s.id);
     const g=el('g',{transform:`translate(${x.toFixed(1)},${y.toFixed(1)})`},pins);
     const pulse=el('circle',{r:16,fill:'none',stroke:V.dayColor(s.day),'stroke-width':4,class:'qpulse',opacity:0},g);
     const dot=el('circle',{r:15,fill:'#fff',stroke:'#1d2160','stroke-width':3},g);
@@ -131,7 +131,7 @@ function paintPins(){
 /* ---------------------------------------------------------------- panel */
 const CHEERS=['Tới nơi rồi, chụp ảnh nào!','Đẹp quá trời luôn!','Nghỉ chân chút nhé!','Check-in thôi cả nhà!','Ở đây có gì ngon ta?','Gió mát ghê!'];
 function panel(){
-  const {trip,plan,stamps,cur}=Q,s=stamps[cur],st=trip.stops.find(t=>t.id===s.id);
+  const {trip,plan,stamps,cur}=Q,s=stamps[cur],st=V.stopById(trip,s.id);
   const day=plan.days[s.day],lastOfDay=day.rows.length&&day.rows[day.rows.length-1].id===s.id&&!s.start&&s.day<plan.days.length-1;
   const chip=$('qDay');chip.textContent=V.dayLabel(trip,s.day);chip.style.background=V.dayColor(s.day);
   $('qTime').textContent=s.start?`Xuất phát ${V.fmtClock(s.leave)}`:s.stay>0?`${V.fmtClock(s.arrive)}–${V.fmtClock(s.leave)}`:`Tới ${V.fmtClock(s.arrive)}`;

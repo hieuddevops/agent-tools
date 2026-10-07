@@ -105,6 +105,21 @@ button,input,select{font:inherit}
 .iconbtn:disabled{opacity:.3;cursor:not-allowed}
 .nightbtn{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border:2px solid var(--ink);border-radius:9px;background:#fff;color:var(--ink);cursor:pointer;font-size:12px;font-weight:700}
 .nightbtn[aria-pressed="true"]{background:var(--night);color:#fff}
+.startbox{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px;border:2px solid var(--ink);border-radius:14px;background:#fff6d6}
+.startbox .nm{font-weight:700;font-size:14px;line-height:1.25;overflow-wrap:anywhere}
+.startbox .sb{font-size:12px;color:var(--muted);line-height:1.3}
+.seg{border:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg legend{padding:0;margin-bottom:4px}
+.seg label{position:relative;display:block;cursor:pointer}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg span{display:block;height:100%;padding:9px 10px;border:2.5px solid var(--ink);border-radius:12px;background:#fff;font-weight:700;font-size:13px;line-height:1.3;color:var(--ink)}
+.seg input:checked + span{background:var(--ink);color:#fff;box-shadow:0 3px 0 var(--pink)}
+.seg input:focus-visible + span{outline:3px solid var(--sun);outline-offset:2px}
+.results .badge{display:inline-block;font-family:var(--font-display);font-weight:800;font-size:10px;padding:1px 6px 0;border-radius:999px;background:var(--sun);border:1.5px solid var(--ink);margin-left:6px;vertical-align:1px}
+.results .more{display:block;width:100%;margin-top:4px;padding:8px 10px;border:2px dashed var(--ink);border-radius:10px;background:#fff6d6;color:var(--ink);font-weight:700;font-size:13px;cursor:pointer;text-align:left}
+.results .tips{cursor:default;font-size:12.5px;color:var(--muted);line-height:1.45}
+.results .tips:hover{background:transparent}
+.nmedit{width:100%;padding:4px 8px;border:2px solid var(--ink);border-radius:8px;font-weight:700;font-size:14px;color:var(--ink)}
 .emptystops{font-size:14px;color:var(--muted);margin:0;padding:12px;border:2px dashed #d9dbf0;border-radius:14px;text-align:center}
 
 /* passport (itinerary) — same look as the Hà Giang Quest passport */
@@ -180,6 +195,7 @@ button,input,select{font:inherit}
 <div class="wrap">
   <header class="top">
     <div class="min-w-0">
+      <a class="btn btn-sm" href="../" style="margin-bottom:12px">← Hà Giang Quest</a>
       <div class="eyebrow">Lên lịch phượt · bản đồ mở OpenStreetMap</div>
       <h1 class="title-main">Việt Nam <span>Quest</span></h1>
       <p class="lead">Thêm những điểm muốn đi, app tự sắp thứ tự cho đỡ vòng vèo, chia theo ngày và vẽ bản đồ. Xong thì xem lại như một chuyến phiêu lưu có sổ hộ chiếu.</p>
@@ -205,32 +221,55 @@ button,input,select{font:inherit}
     <aside class="chunk panel area-edit" aria-label="Lên kế hoạch">
       <div class="field">
         <label for="tripName">Tên chuyến</label>
-        <input class="inp" id="tripName" maxlength="80" autocomplete="off">
+        <input class="inp" id="tripName" maxlength="80" autocomplete="off" placeholder="Ví dụ: Hà Giang tháng 10">
       </div>
+
+      <div class="field">
+        <span class="flabel" id="fromLabel">Xuất phát từ</span>
+        <div class="startbox" id="startBox" hidden>
+          <span class="num" style="background:var(--ink);color:var(--sun)">★</span>
+          <div class="min-w-0"><div class="nm" id="startName"></div><div class="sb" id="startSub"></div></div>
+          <button class="btn btn-sm" id="startChange" type="button">Đổi</button>
+        </div>
+        <div class="search" id="fromWrap">
+          <input class="inp" id="fromQ" type="search" placeholder="Ví dụ: Hà Nội, Ga Yên Trung, TP Hồ Chí Minh…" autocomplete="off"
+            role="combobox" aria-expanded="false" aria-controls="fromResults" aria-autocomplete="list" aria-labelledby="fromLabel">
+          <ul class="results" id="fromResults" role="listbox" hidden></ul>
+        </div>
+      </div>
+
       <div class="grid2">
-        <div class="field"><label for="tripDate">Ngày bắt đầu</label><input class="inp" type="date" id="tripDate"></div>
-        <div class="field"><label for="tripDays">Số ngày</label><input class="inp" type="number" id="tripDays" min="1" max="30" step="1"></div>
+        <div class="field"><label for="tripDate">Ngày đi</label><input class="inp" type="date" id="tripDate" required></div>
+        <div class="field"><label for="tripEnd">Ngày về</label><input class="inp" type="date" id="tripEnd" required></div>
+      </div>
+      <p class="hint" id="daysHint" style="margin-top:-6px"></p>
+      <div class="grid2">
         <div class="field"><label for="dayStart">Xuất phát mỗi sáng</label><input class="inp" type="time" id="dayStart" step="900"></div>
         <div class="field"><label for="maxDrive">Chạy xe tối đa / ngày</label>
           <select class="inp" id="maxDrive"><option value="3">3 tiếng</option><option value="4">4 tiếng</option><option value="5">5 tiếng</option><option value="6">6 tiếng</option><option value="7">7 tiếng</option><option value="8">8 tiếng</option></select></div>
       </div>
-      <div class="field"><label for="terrain">Địa hình (để ước tính giờ chạy xe)</label>
-        <select class="inp" id="terrain"><option value="plain">Đồng bằng, đường lớn</option><option value="mountain">Miền núi, đèo dốc (chậm gần gấp đôi)</option></select></div>
-      <div class="field"><label for="endMode">Kết thúc chuyến</label>
-        <select class="inp" id="endMode"><option value="free">Kết thúc ở điểm cuối cùng</option><option value="loop">Quay về điểm xuất phát</option></select></div>
-      <label class="check"><input type="checkbox" id="optimize"><span>Tự sắp xếp thứ tự đi cho đỡ vòng vèo<br><small style="color:var(--muted);font-weight:500">Tắt đi nếu muốn giữ đúng thứ tự trong danh sách.</small></span></label>
+      <div class="field"><label for="endMode">Chiều về</label>
+        <select class="inp" id="endMode"><option value="loop">Quay về nơi xuất phát</option><option value="free">Không tính chiều về (kết thúc ở điểm cuối)</option></select></div>
 
       <div class="sep"></div>
-      <h2>Điểm đến</h2>
+      <h2>Điểm muốn đến</h2>
       <div class="search">
         <label for="q" class="flabel">Tìm địa điểm để thêm</label>
-        <input class="inp" id="q" type="search" placeholder="Ví dụ: Cột cờ Lũng Cú, Sapa, Hồ Gươm…" autocomplete="off"
+        <input class="inp" id="q" type="search" placeholder="Ví dụ: Sống lưng khủng long, Lũng Cú, Hồ Gươm…" autocomplete="off"
           role="combobox" aria-expanded="false" aria-controls="results" aria-autocomplete="list">
         <ul class="results" id="results" role="listbox" hidden></ul>
       </div>
-      <ul class="stops" id="stops" aria-label="Danh sách điểm đến"></ul>
+      <p class="hint" style="margin-top:-6px">Không thấy tên? Dán link hoặc tọa độ từ Google Maps vào ô trên, hoặc bấm thẳng lên bản đồ.</p>
+      <ul class="stops" id="stops" aria-label="Danh sách điểm muốn đến"></ul>
+
+      <fieldset class="seg">
+        <legend class="flabel">Thứ tự đi</legend>
+        <label><input type="radio" name="orderMode" value="auto"><span>🧭 App tự xếp cho đỡ vòng vèo</span></label>
+        <label><input type="radio" name="orderMode" value="manual"><span>✋ Đi đúng thứ tự tôi sắp</span></label>
+      </fieldset>
+      <p class="hint" id="orderHint" style="margin-top:-6px"></p>
       <button class="btn btn-pink btn-block" id="planBtn" type="button">✨ Lên lịch trình</button>
-      <p class="hint" id="planHint">Điểm đầu tiên trong danh sách là điểm xuất phát. Bấm 🌙 để chọn chỗ ngủ cố định.</p>
+      <p class="hint">Bấm 🌙 ở một điểm để chọn chỗ ngủ cố định. Kéo ghim trên bản đồ để chỉnh vị trí.</p>
     </aside>
 
     <section class="chunk panel area-plan" aria-label="Sổ hộ chiếu lịch trình" id="planCard">
@@ -300,6 +339,7 @@ button,input,select{font:inherit}
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="places.js"></script>
 <script src="app.js"></script>
 <script src="quest.js"></script>
 </body>

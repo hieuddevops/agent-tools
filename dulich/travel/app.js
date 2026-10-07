@@ -1,6 +1,7 @@
 /* Việt Nam Quest · trip planner on open map data.
-   Search: Photon (OSM). Driving times + routes: OSRM public servers. Map: Leaflet + CARTO tiles.
-   Everything runs in the browser; trips live in localStorage and can be shared as a link. */
+   Search: built-in popular places + Photon (OSM) + Nominatim on demand. Driving times + routes: OSRM.
+   Map: Leaflet + OpenStreetMap tiles. Everything runs in the browser; trips live in localStorage
+   and can be shared as a link. */
 (function(){
 'use strict';
 
@@ -8,8 +9,6 @@
 const $=id=>document.getElementById(id);
 const DAY_COLORS=['#ff4f9a','#11b3ae','#ff8a1f','#7a6cf0','#e8423f','#2f9e44','#1c7ed6','#c2255c'];
 const dayColor=i=>DAY_COLORS[i%DAY_COLORS.length];
-/* OSRM assumes free-flowing car speeds; Vietnamese roads (and mountain passes even more) are much slower */
-const TERRAIN={plain:1.3,mountain:2.0};
 const WD=['CN','T2','T3','T4','T5','T6','T7'];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Math.random().toString(36).slice(2,10);
@@ -19,16 +18,26 @@ function fmtClock(min){min=Math.round(min);const d=Math.floor(min/1440);min-=d*1
 function parseClock(s){const [h,m]=String(s||'07:30').split(':').map(Number);return (h||0)*60+(m||0);}
 function haversine(a,b){const R=6371e3,r=x=>x*Math.PI/180,dl=r(b.lat-a.lat),dn=r(b.lng-a.lng);
   const h=Math.sin(dl/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
-function dayLabel(trip,i){
-  if(!trip.date)return `Ngày ${i+1}`;
-  const d=new Date(trip.date+'T00:00:00');if(isNaN(d))return `Ngày ${i+1}`;
+const isoDate=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function addDays(iso,n){const d=new Date((iso||isoDate(new Date()))+'T00:00:00');d.setDate(d.getDate()+n);return isoDate(d);}
+function tripDays(t){
+  const a=new Date(t.date+'T00:00:00'),b=new Date(t.endDate+'T00:00:00');
+  if(isNaN(a)||isNaN(b))return 1;
+  return Math.max(1,Math.min(30,Math.round((b-a)/864e5)+1));
+}
+function dayLabel(t,i){
+  const d=new Date(t.date+'T00:00:00');if(isNaN(d))return `Ngày ${i+1}`;
   d.setDate(d.getDate()+i);return `Ngày ${i+1} · ${WD[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}`;
 }
+/* lower-case, no Vietnamese tone marks: "Sống lưng" → "song lung" */
+const norm=s=>String(s||'').replace(/[đĐ]/g,'d').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 let toastTimer=0;
-function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.hidden=true;},3200);}
+function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.hidden=true;},3600);}
 const debounce=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};};
 
-/* ---------------------------------------------------------------- storage */
+/* ---------------------------------------------------------------- trips: model + storage
+   trip = {id,name,date,endDate,dayStart,maxDrive,end:'loop'|'free',optimize,start:Stop|null,stops:[Stop],plan}
+   Stop = {id,name,sub,lat,lng,stay(min),night} */
 const KEY='vnq-trips-v1',CUR='vnq-current';
 const store={
   load(){try{const v=JSON.parse(localStorage.getItem(KEY));return Array.isArray(v)?v:[];}catch(e){return [];}},
@@ -36,36 +45,47 @@ const store={
   cur(){try{return localStorage.getItem(CUR);}catch(e){return null;}},
   setCur(id){try{localStorage.setItem(CUR,id);}catch(e){}}
 };
+/* older saved trips used "stops[0] = start", "days" and "terrain" */
+function normalizeTrip(t){
+  if(!('start' in t)){t.start=t.stops&&t.stops.length?t.stops.shift():null;t.plan=null;}
+  if(!t.date)t.date=addDays(isoDate(new Date()),7);
+  if(!t.endDate)t.endDate=addDays(t.date,Math.max(1,+t.days||1)-1);
+  delete t.days;delete t.terrain;
+  t.stops=t.stops||[];t.end=t.end==='free'?'free':'loop';t.optimize=t.optimize!==false;
+  t.dayStart=t.dayStart||'07:30';t.maxDrive=+t.maxDrive||5;
+  return t;
+}
+const allStops=t=>t.start?[t.start,...t.stops]:t.stops.slice();
+const stopById=(t,id)=>allStops(t).find(s=>s.id===id);
 
-/* ---------------------------------------------------------------- sample trip */
 const S=(name,sub,lat,lng,stay,night)=>({id:uid(),name,sub,lat,lng,stay,night:!!night});
 function sampleHaGiang(){
-  return {id:uid(),name:'Hà Giang 3N2Đ (chuyến mẫu)',date:'2026-10-11',days:3,dayStart:'07:30',maxDrive:6,terrain:'mountain',end:'loop',optimize:true,
+  return {id:uid(),name:'Hà Giang 3N2Đ (chuyến mẫu)',date:'2026-10-11',endDate:'2026-10-13',dayStart:'07:30',maxDrive:6,end:'loop',optimize:true,
+    start:S('Cột mốc Km0 Hà Giang','TP Hà Giang',22.82639,104.98361,0),
     stops:[
-      S('TP Hà Giang · Cột mốc Km0','Thành phố Hà Giang',22.8233,104.9836,30),
       S('Rừng thông Yên Minh','Thị trấn Yên Minh',23.1172,105.1491,60),
       S('Thung lũng Sủng Là','Nhà của Pao, ruộng tam giác mạch',23.2326,105.2163,45),
       S('Dinh Vua Mèo','Thung lũng Sà Phìn',23.2562,105.2621,60),
-      S('Cột cờ Lũng Cú','Điểm cực Bắc',23.3635,105.3163,60),
+      S('Cột cờ Lũng Cú','Điểm cực Bắc',23.36346,105.31633,60),
       S('Làng Lô Lô Chải','Homestay nhà trình tường',23.3642,105.3101,30,true),
-      S('Phố cổ Đồng Văn','Cháo ấu tẩu, bánh cuốn trứng',23.2797,105.3608,60),
-      S('Đèo Mã Pì Lèng','Ngắm vực Tu Sản',23.2420,105.3979,45),
+      S('Phố cổ Đồng Văn','Cháo ấu tẩu, bánh cuốn trứng',23.27967,105.36078,60),
+      S('Đèo Mã Pì Lèng','Ngắm vực Tu Sản',23.24196,105.39792,45),
       S('Thuyền sông Nho Quế','Hẻm Tu Sản',23.2290,105.4120,90),
       S('Phố núi Mèo Vạc','Ăn trưa, đổ xăng',23.1633,105.4104,60),
       S('Núi Đôi · Tam Sơn','Quản Bạ',23.0727,104.9876,30,true),
-      S('Cổng Trời Quản Bạ','Ngắm toàn cảnh thung lũng',23.0493,104.9930,45),
+      S('Cổng Trời Quản Bạ','Ngắm toàn cảnh thung lũng',23.04932,104.99302,45),
       S('Thạch Sơn Thần','Rừng đá Quản Bạ',23.0257,104.9707,30),
       S('Dốc Bắc Sum','Cung đường ziczac',22.9882,104.9359,20)
     ]};
 }
 function blankTrip(){
-  const d=new Date();d.setDate(d.getDate()+7);
-  return {id:uid(),name:'Chuyến đi mới',date:d.toISOString().slice(0,10),days:2,dayStart:'07:30',maxDrive:5,terrain:'plain',end:'free',optimize:true,stops:[]};
+  const d=addDays(isoDate(new Date()),7);
+  return {id:uid(),name:'Chuyến đi mới',date:d,endDate:addDays(d,1),dayStart:'07:30',maxDrive:5,end:'loop',optimize:true,start:null,stops:[]};
 }
 
 /* ---------------------------------------------------------------- services */
 const OSRM=['https://router.project-osrm.org','https://routing.openstreetmap.de/routed-car'];
-const PHOTON='https://photon.komoot.io';
+const PHOTON='https://photon.komoot.io',NOMINATIM='https://nominatim.openstreetmap.org';
 const VN_BBOX='102.1,8.2,109.6,23.5';
 async function fetchJson(url,ms){
   const c=new AbortController(),t=setTimeout(()=>c.abort(),ms||12000);
@@ -81,6 +101,13 @@ const coordStr=pts=>pts.map(p=>`${(+p.lng).toFixed(6)},${(+p.lat).toFixed(6)}`).
 /* straight-line fallback when the routing servers are unreachable */
 const estDist=(a,b)=>haversine(a,b)*1.35;
 const estDur=(a,b)=>estDist(a,b)/(45/3.6);
+/* OSRM assumes free-flowing car speeds. Real Vietnamese roads are slower and mountain passes much slower,
+   so each leg is scaled by how winding it is (road distance ÷ straight line): ~1.2× on highways, up to 2.3× on passes. */
+function slowFactor(a,b,roadDist){
+  const line=haversine(a,b);
+  if(line<3000||!roadDist)return 1.35;
+  return Math.max(1.2,Math.min(2.3,1.2+(roadDist/line-1.25)*1.1));
+}
 
 async function getMatrix(pts){
   const n=pts.length;
@@ -114,9 +141,38 @@ function simplify(coords,max){
   for(let i=0;i<max;i++)out.push(coords[Math.round(i*step)]);
   return out;
 }
-async function searchPlaces(q){
-  const j=await fetchJson(`${PHOTON}/api/?limit=7&lang=default&bbox=${VN_BBOX}&q=${encodeURIComponent(q)}`,8000);
-  return (j.features||[]).map(featureToPlace).filter(Boolean);
+
+/* ---------------------------------------------------------------- place search */
+const PLACES=(window.VNQ_PLACES||[]).map(([name,sub,lat,lng,aka])=>({name,sub,lat,lng,key:norm(`${name} ${sub} ${aka||''}`),nkey:norm(name)}));
+/* every query word must start a word somewhere in the entry, and at least one must be in the name itself
+   ("Hà Nội" should not match "Chùa Hương, Hà Nội" or "Đại Nội Huế") */
+const words=s=>norm(s).split(' ').filter(Boolean);
+const hasWord=(ws,t)=>ws.some(w=>w.startsWith(t));
+function localSearch(q){
+  const toks=words(q);if(!toks.length)return [];
+  return PLACES.filter(p=>{const all=p.key.split(' '),nm=p.nkey.split(' ');return toks.every(t=>hasWord(all,t))&&toks.some(t=>hasWord(nm,t));})
+    .map(p=>({p,score:toks.filter(t=>hasWord(p.nkey.split(' '),t)).length}))
+    .sort((a,b)=>b.score-a.score||a.p.name.length-b.p.name.length)
+    .slice(0,5).map(({p})=>({name:p.name,sub:p.sub,lat:p.lat,lng:p.lng,badge:'Nổi tiếng'}));
+}
+/* drop Photon's loose fuzzy hits (e.g. "Chung cư … đường Song Hành, Long Trường" for "sống lưng khủng long") */
+function relevant(q,p){
+  const toks=words(q).filter(t=>t.length>1);if(!toks.length)return true;
+  const nm=words(p.name),inName=toks.filter(t=>hasWord(nm,t)).length;
+  return inName/toks.length>=.5||toks.every(t=>hasWord(nm.concat(words(p.sub)),t));
+}
+async function photonSearch(q){
+  const j=await fetchJson(`${PHOTON}/api/?limit=12&lang=default&bbox=${VN_BBOX}&q=${encodeURIComponent(q)}`,8000);
+  const out=[];
+  (j.features||[]).filter(f=>(f.properties||{}).countrycode==='VN').map(featureToPlace)
+    .forEach(p=>{if(p&&relevant(q,p)&&!out.some(o=>norm(o.name)===norm(p.name)&&near(o,p)))out.push(p);});   /* OSM often has the same place 2–3 times */
+  return out.slice(0,7);
+}
+/* Nominatim only on an explicit "search harder" click (its usage policy forbids search-as-you-type) */
+async function nominatimSearch(q){
+  const j=await fetchJson(`${NOMINATIM}/search?format=jsonv2&limit=8&countrycodes=vn&accept-language=vi&q=${encodeURIComponent(q)}`,10000);
+  return (j||[]).map(r=>{const parts=String(r.display_name||'').split(',').map(s=>s.trim());
+    return {name:r.name||parts[0],sub:parts.slice(1,4).join(', '),lat:+r.lat,lng:+r.lon};}).filter(p=>p.name&&isFinite(p.lat));
 }
 async function reversePlace(lat,lng){
   try{const j=await fetchJson(`${PHOTON}/reverse?lat=${lat}&lon=${lng}&limit=1&lang=default`,8000);const p=(j.features||[]).map(featureToPlace)[0];if(p){p.lat=lat;p.lng=lng;return p;}}catch(e){}
@@ -129,9 +185,83 @@ function featureToPlace(f){
     .filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(', ');
   return {name,sub,lat:+c[1],lng:+c[0]};
 }
+/* coordinates or a Google Maps link pasted into the search box */
+function parseCoords(s){
+  s=String(s).trim();
+  const m=s.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)||s.match(/@(-?\d+\.\d+),\s*(-?\d+\.\d+)/)
+    ||s.match(/[?&](?:q|query|ll|destination|center)=(-?\d+\.\d+)(?:,|%2C)\s*(-?\d+\.\d+)/i)
+    ||s.match(/^(-?\d{1,2}(?:\.\d+)?)\s*[,;\s]\s*(-?\d{2,3}(?:\.\d+)?)$/);
+  if(!m)return null;
+  const lat=+m[1],lng=+m[2];
+  return lat>5&&lat<25&&lng>100&&lng<112?{lat,lng}:null;
+}
+const isShortLink=s=>/^(https?:\/\/)?(maps\.app\.goo\.gl|goo\.gl\/maps)\//i.test(String(s).trim());
+const near=(a,b)=>Math.abs(a.lat-b.lat)<.003&&Math.abs(a.lng-b.lng)<.003;
+const TIPS='Không thấy? Thử tên ngắn hơn hoặc tên xã/bản gần đó, rồi kéo ghim cho đúng chỗ và bấm ✎ để đổi tên. Cũng có thể mở Google Maps, giữ tay lên vị trí để copy tọa độ (dạng 21.30, 104.47) rồi dán vào đây.';
+
+/* Combobox: built-in places first, then Photon; coordinates/links are understood directly. */
+function makeSearch(input,list,onPick){
+  let hits=[],sel=-1,seq=0;
+  const close=()=>{list.hidden=true;input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');};
+  function show(items,{status,more,tips}={}){
+    hits=items;sel=items.length?0:-1;
+    let html=items.map((p,i)=>`<li role="option" id="${list.id}-${i}" aria-selected="${i===sel}" data-i="${i}"><b>${esc(p.name)}${p.badge?`<span class="badge">${esc(p.badge)}</span>`:''}</b>${p.sub?`<small>${esc(p.sub)}</small>`:''}</li>`).join('');
+    if(status)html+=`<li class="tips" aria-disabled="true">${esc(status)}</li>`;
+    if(more)html+=`<li class="tips" aria-disabled="true"><button type="button" class="more" data-more="1">🔎 Tìm kỹ hơn trên OpenStreetMap</button></li>`;
+    if(tips)html+=`<li class="tips" aria-disabled="true">${esc(TIPS)}</li>`;
+    list.innerHTML=html;list.hidden=false;input.setAttribute('aria-expanded','true');
+    if(sel>=0)input.setAttribute('aria-activedescendant',`${list.id}-${sel}`);else input.removeAttribute('aria-activedescendant');
+  }
+  const run=debounce(async()=>{
+    const text=input.value.trim(),my=++seq;
+    if(text.length<2){close();return;}
+    const c=parseCoords(text);
+    if(c){show([{name:'📍 Vị trí theo tọa độ',sub:`${c.lat}, ${c.lng}`,lat:c.lat,lng:c.lng,needName:true}]);return;}
+    if(isShortLink(text)){show([],{status:'Link rút gọn (maps.app.goo.gl) không đọc được tọa độ. Mở link đó, giữ tay lên vị trí để copy tọa độ rồi dán vào đây.'});return;}
+    const local=localSearch(text);
+    show(local,{status:'Đang tìm…'});
+    let remote=[];
+    try{remote=await photonSearch(text);}catch(e){if(my===seq)show(local,{status:'Không kết nối được dịch vụ tìm kiếm.',more:true,tips:!local.length});return;}
+    if(my!==seq)return;
+    /* an exact name match from the map (typing "Hà Nội" → the city) goes first */
+    const exact=remote.filter(r=>norm(r.name)===norm(text)),rest=remote.filter(r=>!exact.includes(r));
+    const merged=exact.concat(local.filter(l=>!exact.some(e=>near(e,l))),rest.filter(r=>!local.some(l=>near(l,r)))).slice(0,8);
+    show(merged,{more:true,tips:merged.length<2});
+  },350);
+  async function deep(){
+    const text=input.value.trim(),my=++seq;if(!text)return;
+    show(hits,{status:'Đang tìm kỹ hơn…'});
+    try{const r=await nominatimSearch(text);if(my!==seq)return;
+      const merged=hits.concat(r.filter(x=>!hits.some(h=>near(h,x)))).slice(0,10);
+      show(merged,{status:r.length?'':'OpenStreetMap cũng chưa có tên này.',tips:true});}
+    catch(e){if(my===seq)show(hits,{status:'Không kết nối được, thử lại sau.',tips:true});}
+    input.focus();
+  }
+  async function pick(i){
+    const p=hits[i];if(!p)return;
+    input.value='';close();
+    if(p.needName){const r=await reversePlace(p.lat,p.lng);onPick({name:r.name,sub:r.sub||`${p.lat}, ${p.lng}`,lat:p.lat,lng:p.lng});}
+    else onPick({name:p.name,sub:p.sub||'',lat:p.lat,lng:p.lng});
+  }
+  input.addEventListener('input',run);
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){close();return;}
+    if(list.hidden||!hits.length){if(e.key==='Enter'){e.preventDefault();if(input.value.trim().length>=2)deep();}return;}
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();sel=(sel+(e.key==='ArrowDown'?1:-1)+hits.length)%hits.length;
+      list.querySelectorAll('li[data-i]').forEach((li,i)=>li.setAttribute('aria-selected',String(i===sel)));
+      input.setAttribute('aria-activedescendant',`${list.id}-${sel}`);list.querySelector(`#${list.id}-${sel}`)?.scrollIntoView({block:'nearest'});}
+    else if(e.key==='Enter'){e.preventDefault();pick(sel);}
+  });
+  list.addEventListener('mousedown',e=>{
+    if(e.target.closest('[data-more]')){e.preventDefault();deep();return;}
+    const li=e.target.closest('li[data-i]');if(li){e.preventDefault();pick(+li.dataset.i);}
+    else if(e.target.closest('.tips'))e.preventDefault();
+  });
+  input.addEventListener('blur',()=>setTimeout(()=>{if(document.activeElement!==input)close();},180));
+}
 
 /* ---------------------------------------------------------------- planning
-   Node 0 is the fixed start. D is a matrix of minutes (already scaled for terrain).
+   Node 0 is the fixed start. D is a matrix of minutes (already scaled for road speed).
    solveOrder visits nodes 1..n-1 starting at 0; E[v] is the cost of finishing at v (0 = open end). */
 function routeCost(D,order,E){let c=0,p=0;for(const v of order){c+=D[p][v];p=v;}return c+E[p];}
 function solveOrder(D,E){
@@ -175,7 +305,7 @@ function orderPath(D,start,nodes,end){
 }
 function permutations(a){if(a.length<=1)return [a.slice()];const out=[];a.forEach((v,i)=>permutations(a.filter((_,k)=>k!==i)).forEach(p=>out.push([v,...p])));return out;}
 /* With fixed nights, the nights are the day boundaries: try each order of the nights, slot every other stop
-   into the day where it adds the least detour (keeping days balanced), then reorder inside each day. */
+   into a day (least detour, keeping days balanced), then improve by moving/swapping stops between days. */
 function anchorPlan(D,stays,nights,loop){
   const n=D.length,others=[];for(let v=1;v<n;v++)if(!nights.includes(v))others.push(v);
   const tries=nights.length<=5?permutations(nights):[orderPath(D,0,nights,loop?0:-1)];
@@ -199,7 +329,7 @@ function anchorPlan(D,stays,nights,loop){
       });
       days[pick.di].seq.splice(pick.p,0,pick.v);loads[pick.di]=load(days[pick.di]);left.delete(pick.v);
     }
-    /* From here only the day of each stop is searched; the order inside a day is always the optimal one (days are small). */
+    /* from here only the day of each stop is searched; the order inside a day is always the optimal one (days are small) */
     const cache=new Map();
     const dayBest=(d,set)=>{
       const key=d.from+'|'+d.to+'|'+set.slice().sort((a,b)=>a-b).join(',');
@@ -226,8 +356,7 @@ function anchorPlan(D,stays,nights,loop){
       }
     }
     days.forEach((d,i)=>{d.seq=dayBest(d,sets[i]).seq;});
-    const score=cur;
-    if(!best||score<best.score)best={score,days};
+    if(!best||cur<best.score)best={score:cur,days};
   }
   /* flatten into the same shape splitDays returns */
   const seq=[],groups=[];
@@ -241,7 +370,7 @@ function splitDays(items,K){
   const warnings=[];
   let k=Math.max(1,Math.min(K,m));
   if(need>k){warnings.push(`Có ${need-1} đêm ngủ cố định nên chuyến cần ít nhất ${need} ngày. Đã tính theo ${need} ngày.`);k=need;}
-  if(m<K)warnings.push(`Chỉ có ${m} điểm cho ${K} ngày nên chia thành ${m} ngày.`);
+  if(m<K)warnings.push(`Chỉ có ${m} chặng cho ${K} ngày nên lịch gói gọn trong ${m} ngày.`);
   const pre=[0];items.forEach(it=>pre.push(pre[pre.length-1]+it.load));
   const fpre=[0];forced.forEach(f=>fpre.push(fpre[fpre.length-1]+(f?1:0)));
   const INF=1e18,best=[...Array(k+1)].map(()=>new Array(m+1).fill(INF)),from=[...Array(k+1)].map(()=>new Array(m+1).fill(-1));
@@ -256,55 +385,54 @@ function splitDays(items,K){
   for(let d=k;d>=1;d--){const i=from[d][j];groups.unshift([i,j]);j=i;}
   return {groups,warnings};
 }
-function planSig(trip){
-  return JSON.stringify([trip.stops.map(s=>[s.lat,s.lng,s.stay,s.night]),trip.days,trip.dayStart,trip.terrain,trip.end,trip.optimize]);
+function planSig(t){
+  return JSON.stringify([allStops(t).map(s=>[s.lat,s.lng,s.stay,s.night]),tripDays(t),t.dayStart,t.maxDrive,t.end,t.optimize]);
 }
-async function buildPlan(trip){
-  const stops=trip.stops;
-  if(stops.length<2)throw new Error('Cần ít nhất 2 điểm: điểm xuất phát và 1 điểm đến.');
-  const loop=trip.end==='loop',k=TERRAIN[trip.terrain]||1.3;
-  const M=await getMatrix(stops);
-  const D=M.dur.map(r=>r.map(s=>s/60*k));
-  const stays=stops.map((s,i)=>i?(+s.stay||0):0),nights=[];stops.forEach((s,i)=>{if(i&&s.night)nights.push(i);});
-  const K=Math.max(1,+trip.days||1);
+async function buildPlan(t){
+  const pts=allStops(t);
+  if(!t.start)throw new Error('Chọn nơi xuất phát trước nhé.');
+  if(pts.length<2)throw new Error('Thêm ít nhất 1 điểm muốn đến.');
+  const loop=t.end==='loop',K=tripDays(t);
+  const M=await getMatrix(pts);
+  const D=M.dur.map((r,i)=>r.map((s,j)=>i===j?0:s/60*slowFactor(pts[i],pts[j],M.dist[i][j])));
+  const stays=pts.map((s,i)=>i?(+s.stay||0):0),nights=[];pts.forEach((s,i)=>{if(i&&s.night)nights.push(i);});
   let seq,groups,warnings=[];
-  if(trip.optimize&&nights.length){
+  if(t.optimize&&nights.length){
     ({seq,groups}=anchorPlan(D,stays,nights,loop));
-    if(groups.length!==K)warnings.push(`Có ${nights.length} chỗ ngủ cố định nên chuyến được chia thành ${groups.length} ngày (bạn đặt ${K} ngày). Muốn thêm ngày thì bấm 🌙 ở thêm chỗ ngủ.`);
+    if(groups.length!==K)warnings.push(`Có ${nights.length} chỗ ngủ cố định nên lịch chia thành ${groups.length} ngày, trong khi chuyến của bạn dài ${K} ngày. Bấm 🌙 ở thêm/bớt chỗ ngủ cho khớp.`);
   }else{
-    const order=trip.optimize?solveOrder(D,D.map(r=>loop?r[0]:0)):stops.slice(1).map((_,i)=>i+1);
+    const order=t.optimize?solveOrder(D,D.map(r=>loop?r[0]:0)):pts.slice(1).map((_,i)=>i+1);
     seq=loop?order.concat([0]):order;
     const sp=splitDays(seq.map((idx,pos)=>({load:D[pos?seq[pos-1]:0][idx]+stays[idx],night:nights.includes(idx)})),K);
     groups=sp.groups;warnings=sp.warnings;
   }
   const items=seq.map((idx,pos)=>({idx,drive:D[pos?seq[pos-1]:0][idx],stay:stays[idx]}));
-  let estimated=M.estimated;const days=[];let prevIdx=0;const start=parseClock(trip.dayStart),maxD=(+trip.maxDrive||5)*60;
+  let estimated=M.estimated;const days=[];let prevIdx=0;const start=parseClock(t.dayStart),maxD=(+t.maxDrive||5)*60;
   for(const [a,b] of groups){
-    const g=items.slice(a,b),pts=[stops[prevIdx],...g.map(it=>stops[it.idx])];
-    const r=await getRoute(pts);estimated=estimated||r.estimated;
-    let t=start,drive=0,dist=0;const rows=[];
+    const g=items.slice(a,b),dayPts=[pts[prevIdx],...g.map(it=>pts[it.idx])];
+    const r=await getRoute(dayPts);estimated=estimated||r.estimated;
+    let tm=start,drive=0,dist=0;const rows=[];
     g.forEach((it,i)=>{
-      const leg=r.legs[i]||{dur:it.drive*60/k,dist:0},dm=leg.dur/60*k;
-      t+=dm;drive+=dm;dist+=leg.dist;
-      const arrive=t;t+=it.stay;
-      rows.push({id:stops[it.idx].id,ret:it.idx===0,arrive,leave:t,drive:dm,dist:leg.dist});
+      const leg=r.legs[i],dm=leg?leg.dur/60*slowFactor(dayPts[i],dayPts[i+1],leg.dist):it.drive,dd=leg?leg.dist:0;
+      tm+=dm;drive+=dm;dist+=dd;
+      const arrive=tm;tm+=it.stay;
+      rows.push({id:pts[it.idx].id,ret:it.idx===0,arrive,leave:tm,drive:dm,dist:dd});
     });
-    days.push({from:stops[prevIdx].id,depart:start,rows,drive,dist,end:t,over:drive>maxD,late:t>21*60,geom:r.coords});
+    days.push({from:pts[prevIdx].id,depart:start,rows,drive,dist,end:tm,over:drive>maxD,late:tm>21*60,geom:r.coords});
     prevIdx=g[g.length-1].idx;
   }
   days.forEach((d,i)=>{
-    if(d.over)warnings.push(`${dayLabel(trip,i).split(' · ')[0]}: chạy xe khoảng ${fmtDur(d.drive)}, quá mức ${fmtDur(maxD)} bạn đặt.`);
-    else if(d.late)warnings.push(`${dayLabel(trip,i).split(' · ')[0]}: tới nơi cuối khoảng ${fmtClock(d.end)}, khá muộn.`);
+    if(d.over)warnings.push(`${dayLabel(t,i).split(' · ')[0]}: chạy xe khoảng ${fmtDur(d.drive)}, quá mức ${fmtDur(maxD)} bạn đặt.`);
+    else if(d.late)warnings.push(`${dayLabel(t,i).split(' · ')[0]}: tới nơi cuối khoảng ${fmtClock(d.end)}, khá muộn.`);
   });
   if(estimated)warnings.unshift('Không kết nối được máy chủ tính đường nên một phần thời gian chạy xe đang ước tính theo đường chim bay.');
-  return {sig:planSig(trip),at:Date.now(),estimated,days,warnings};
+  return {sig:planSig(t),at:Date.now(),estimated,days,warnings};
 }
 
 /* ---------------------------------------------------------------- state */
-let trips=store.load(),trip=null,busy=false;
+let trips=store.load().map(normalizeTrip),trip=null,busy=false;
 function persist(){if(!store.save(trips))toast('Không lưu được vào trình duyệt (bộ nhớ bị chặn hoặc đầy).');}
 const persistSoon=debounce(persist,300);
-const byId=id=>trip.stops.find(s=>s.id===id);
 const isStale=()=>!trip.plan||trip.plan.sig!==planSig(trip);
 
 /* ---------------------------------------------------------------- map */
@@ -328,26 +456,27 @@ function renderMap(fit){
     });
   }
   const info=stampInfo(plan);
-  trip.stops.forEach((s,idx)=>{
-    const st=info.get(s.id);
-    const label=idx===0?'★':st?String(st.n):String(idx+1),color=st?dayColor(st.day):'#9a9dc8';
-    const m=L.marker([s.lat,s.lng],{icon:pinIcon(label,color,idx===0),title:s.name,keyboard:true}).addTo(layer);
-    const time=st?`<br>${esc(dayLabel(trip,st.day))} · ${fmtClock(st.arrive)}${st.stay?`–${fmtClock(st.leave)}`:''}`:'';
-    m.bindPopup(`<b>${esc(s.name)}</b>${s.sub?`<br><span style="color:#5b5f8f">${esc(s.sub)}</span>`:''}${time}${s.night?'<br>🌙 Ngủ đêm tại đây':''}`);
+  allStops(trip).forEach((s,idx)=>{
+    const isStart=!!trip.start&&idx===0,st=info.get(s.id);
+    const label=isStart?'★':st?String(st.n):String(trip.start?idx:idx+1),color=st?dayColor(st.day):'#9a9dc8';
+    const m=L.marker([s.lat,s.lng],{icon:pinIcon(label,color,isStart),title:s.name,keyboard:true,draggable:true,autoPan:true}).addTo(layer);
+    const time=st&&!isStart?`<br>${esc(dayLabel(trip,st.day))} · ${fmtClock(st.arrive)}${st.stay?`–${fmtClock(st.leave)}`:''}`:'';
+    m.bindPopup(`<b>${esc(s.name)}</b>${isStart?' <span style="color:#5b5f8f">(xuất phát)</span>':''}${s.sub?`<br><span style="color:#5b5f8f">${esc(s.sub)}</span>`:''}${time}${s.night?'<br>🌙 Ngủ đêm tại đây':''}<br><small style="color:#5b5f8f">Kéo ghim để chỉnh vị trí</small>`);
+    m.on('dragend',()=>{const ll=m.getLatLng();s.lat=+ll.lat.toFixed(5);s.lng=+ll.lng.toFixed(5);changed();toast(`Đã chỉnh vị trí “${s.name}”.`);});
     markers.set(s.id,m);bounds.push([s.lat,s.lng]);
   });
-  if(fit&&bounds.length){if(bounds.length===1)map.setView(bounds[0],12);else map.fitBounds(bounds,{padding:[36,36],maxZoom:13});}
+  if(fit&&bounds.length){if(bounds.length===1)map.setView(bounds[0],11);else map.fitBounds(bounds,{padding:[36,36],maxZoom:13});}
   renderLegend(plan);
 }
 function renderLegend(plan){
   const lg=$('legend');
-  if(!plan){lg.innerHTML='<span class="hint">Bấm lên bản đồ để thêm điểm ngay tại chỗ đó.</span>';return;}
+  if(!plan){lg.innerHTML='<span class="hint">Bấm lên bản đồ để thêm điểm · kéo ghim để chỉnh vị trí.</span>';return;}
   lg.innerHTML=plan.days.map((d,i)=>`<span><i style="background:${dayColor(i)}"></i>${esc(dayLabel(trip,i))}</span>`).join('');
 }
 /* stamp number / day / times for each stop in the current plan */
 function stampInfo(plan){
-  const info=new Map();if(!plan)return info;
-  const start=trip.stops[0];if(start)info.set(start.id,{n:1,day:0,arrive:plan.days[0].depart,leave:plan.days[0].depart,stay:0});
+  const info=new Map();if(!plan||!trip.start)return info;
+  info.set(trip.start.id,{n:1,day:0,arrive:plan.days[0].depart,leave:plan.days[0].depart,stay:0});
   let n=1;
   plan.days.forEach((d,i)=>d.rows.forEach(r=>{if(r.ret)return;n++;info.set(r.id,{n,day:i,arrive:r.arrive,leave:r.leave,stay:r.leave>r.arrive});}));
   return info;
@@ -359,38 +488,36 @@ map.on('click',async e=>{
   if(busy||Date.now()-popupClosedAt<350)return;
   const {lat,lng}=e.latlng;
   const p=await reversePlace(+lat.toFixed(5),+lng.toFixed(5));
-  addStop(p);
+  if(!trip.start)setStart(p);else addStop(p);
 });
 
 /* ---------------------------------------------------------------- passport (shared with the Quest view) */
-/* Builds the day-by-day passport. opts.quest marks rows as done/current; opts.onPick(stampIndex) on click. */
 function passportStamps(t,plan){
-  const out=[],start=t.stops[0];
-  out.push({id:start.id,day:0,arrive:plan.days[0].depart,leave:plan.days[0].depart,stay:0,start:true});
+  const out=[{id:t.start.id,day:0,arrive:plan.days[0].depart,leave:plan.days[0].depart,stay:0,start:true}];
   plan.days.forEach((d,i)=>d.rows.forEach(r=>out.push({id:r.id,day:i,arrive:r.arrive,leave:r.leave,stay:r.leave-r.arrive,drive:r.drive,dist:r.dist,ret:r.ret})));
   return out;
 }
+/* Builds the day-by-day passport. opts.quest marks rows as done/current; opts.onPick(stampIndex) on click. */
 function renderPassport(box,t,plan,opts){
   opts=opts||{};
-  const stamps=passportStamps(t,plan),get=id=>t.stops.find(s=>s.id===id)||{name:'?'};
+  const stamps=passportStamps(t,plan),get=id=>stopById(t,id)||{name:'?'};
   let html='',k=0;
   plan.days.forEach((d,i)=>{
     const col=dayColor(i);
     html+=`<div class="logday" style="--dc:${col}"><span>${esc(dayLabel(t,i))}</span><span class="sum${d.over?' over':''}">🛵 ${fmtDur(d.drive)} · ${fmtKm(d.dist)}</span></div>`;
-    if(i===0){const s=stamps[0],st=get(s.id);
-      html+=row(k++,s,st,'★',`${fmtClock(s.leave)}`,'Xuất phát',col);}
+    if(i===0){const s=stamps[0];html+=row(k++,s,get(s.id),'★',fmtClock(s.leave),'Xuất phát',col);}
     else html+=`<div class="logleg"><span class="ic">🌅</span><span class="t">${fmtClock(d.depart)}</span><span class="n">Rời ${esc(get(d.from).name)}</span></div>`;
     d.rows.forEach(r=>{
-      const s=stamps[k],st=get(s.id);
+      const s=stamps[k];
       html+=`<div class="logleg"><span class="ic">🛵</span><span class="t">${fmtDur(r.drive)}</span><span class="n">${fmtKm(r.dist)}</span></div>`;
       const time=s.stay>0?`${fmtClock(s.arrive)}<br>–${fmtClock(s.leave)}`:fmtClock(s.arrive);
-      html+=row(k++,s,st,s.ret?'↩':String(k),time,s.ret?'Về lại điểm xuất phát':'',col);
+      html+=row(k++,s,get(s.id),s.ret?'↩':String(k),time,s.ret?'Về lại nơi xuất phát':'',col);
     });
     if(i<plan.days.length-1){const last=d.rows[d.rows.length-1];html+=`<div class="lognight">🌙 Ngủ tại ${esc(get(last.id).name)} · tới lúc ${fmtClock(d.end)}</div>`;}
     if(!opts.quest){const url=gmapsUrl(t,d);if(url)html+=`<div class="daylinks"><a class="gmap" href="${url}" target="_blank" rel="noopener">Mở ${esc(dayLabel(t,i).split(' · ')[0].toLowerCase())} trong Google Maps ↗</a></div>`;}
   });
   box.innerHTML=html;
-  box.querySelectorAll('.logrow').forEach(b=>b.addEventListener('click',()=>{const i=+b.dataset.k;if(opts.onPick)opts.onPick(i);}));
+  box.querySelectorAll('.logrow').forEach(b=>b.addEventListener('click',()=>{if(opts.onPick)opts.onPick(+b.dataset.k);}));
   function row(i,s,st,label,time,note,col){
     const cls=opts.quest?(i<=opts.current?' done':'')+(i===opts.current?' current':''):'';
     const sub=note||st.sub||'';
@@ -400,7 +527,7 @@ function renderPassport(box,t,plan,opts){
 }
 /* Google Maps directions link for one day (no API key needed). URLs allow up to 9 waypoints. */
 function gmapsUrl(t,d){
-  const pts=[t.stops.find(s=>s.id===d.from),...d.rows.map(r=>t.stops.find(s=>s.id===r.id))].filter(Boolean);
+  const pts=[stopById(t,d.from),...d.rows.map(r=>stopById(t,r.id))].filter(Boolean);
   if(pts.length<2)return '';
   const ll=p=>`${p.lat},${p.lng}`,mid=pts.slice(1,-1).slice(0,9);
   return `https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=${ll(pts[0])}&destination=${ll(pts[pts.length-1])}${mid.length?`&waypoints=${encodeURIComponent(mid.map(ll).join('|'))}`:''}`;
@@ -408,39 +535,62 @@ function gmapsUrl(t,d){
 
 /* ---------------------------------------------------------------- editor UI */
 function fillForm(){
-  $('tripName').value=trip.name;$('tripDate').value=trip.date||'';$('tripDays').value=trip.days;
-  $('dayStart').value=trip.dayStart;$('maxDrive').value=String(trip.maxDrive);$('terrain').value=trip.terrain;
-  $('endMode').value=trip.end;$('optimize').checked=!!trip.optimize;
+  $('tripName').value=trip.name;$('tripDate').value=trip.date;$('tripEnd').value=trip.endDate;$('tripEnd').min=trip.date;
+  $('dayStart').value=trip.dayStart;$('maxDrive').value=String(trip.maxDrive);$('endMode').value=trip.end;
+  document.querySelector(`input[name="orderMode"][value="${trip.optimize?'auto':'manual'}"]`).checked=true;
+  renderDaysHint();renderOrderHint();renderStart();
+}
+function renderDaysHint(){const n=tripDays(trip);$('daysHint').textContent=`→ ${n} ngày${n>1?` ${n-1} đêm`:' (đi về trong ngày)'}`;}
+function renderOrderHint(){
+  $('orderHint').textContent=trip.optimize
+    ?'Thêm điểm theo thứ tự nào cũng được. App tính đường thật rồi tự sắp thứ tự đi đỡ vòng vèo nhất và chia vào từng ngày.'
+    :'App giữ đúng thứ tự trong danh sách (sắp bằng nút ↑ ↓), chỉ tính giờ chạy xe và chia vào từng ngày.';
+}
+function renderStart(){
+  const s=trip.start;
+  $('startBox').hidden=!s;$('fromWrap').hidden=!!s;
+  if(s){$('startName').textContent=s.name;$('startSub').textContent=s.sub||'';}
 }
 function renderTripSel(){
   $('tripSel').innerHTML=trips.map(t=>`<option value="${t.id}"${t.id===trip.id?' selected':''}>${esc(t.name)}</option>`).join('');
 }
-const STAYS=[0,15,30,45,60,90,120,180,240];
+const STAYS=[0,15,30,45,60,90,120,180,240,360];
 function renderStops(){
   const ul=$('stops');
   if(!trip.stops.length){ul.innerHTML='<li class="emptystops">Chưa có điểm nào. Tìm ở ô phía trên hoặc bấm lên bản đồ.</li>';return;}
-  const info=stampInfo(!isStale()?trip.plan:null);
+  const info=stampInfo(!isStale()?trip.plan:null),manual=!trip.optimize;
   ul.innerHTML=trip.stops.map((s,i)=>{
-    const st=info.get(s.id),start=i===0;
-    const stay=STAYS.includes(+s.stay)?+s.stay:45;
-    return `<li class="stop${start?' start':''}" data-id="${s.id}">
-      <span class="num" style="${start?'background:var(--ink);color:var(--sun)':st?`background:${dayColor(st.day)}`:''}">${start?'★':st?st.n:i+1}</span>
-      <div style="min-width:0">${start?'<span class="tag">Xuất phát</span>':''}<div class="nm">${esc(s.name)}</div>${s.sub?`<div class="sb">${esc(s.sub)}</div>`:''}</div>
+    const st=info.get(s.id),stay=STAYS.includes(+s.stay)?+s.stay:45;
+    return `<li class="stop" data-id="${s.id}">
+      <span class="num" style="${st?`background:${dayColor(st.day)}`:''}">${st?st.n:i+1}</span>
+      <div class="min-w-0"><div class="nm">${esc(s.name)}</div>${s.sub?`<div class="sb">${esc(s.sub)}</div>`:''}</div>
       <div class="ctl">
-        <button class="iconbtn" type="button" data-act="up" aria-label="Đưa ${esc(s.name)} lên" ${i===0?'disabled':''}>↑</button>
-        <button class="iconbtn" type="button" data-act="down" aria-label="Đưa ${esc(s.name)} xuống" ${i===trip.stops.length-1?'disabled':''}>↓</button>
+        ${manual?`<button class="iconbtn" type="button" data-act="up" aria-label="Đưa ${esc(s.name)} lên" ${i===0?'disabled':''}>↑</button>
+        <button class="iconbtn" type="button" data-act="down" aria-label="Đưa ${esc(s.name)} xuống" ${i===trip.stops.length-1?'disabled':''}>↓</button>`:''}
+        <button class="iconbtn" type="button" data-act="rename" aria-label="Đổi tên ${esc(s.name)}">✎</button>
         <button class="iconbtn" type="button" data-act="del" aria-label="Xóa ${esc(s.name)}">✕</button>
       </div>
-      ${start?'':`<div class="opts">
+      <div class="opts">
         <select data-act="stay" aria-label="Thời gian dừng ở ${esc(s.name)}">${STAYS.map(v=>`<option value="${v}"${v===stay?' selected':''}>${v?`Dừng ${fmtDur(v)}`:'Chỉ đi qua'}</option>`).join('')}</select>
         <button class="nightbtn" type="button" data-act="night" aria-pressed="${s.night?'true':'false'}">🌙 ${s.night?'Ngủ ở đây':'Ngủ ở đây?'}</button>
-      </div>`}
+      </div>
     </li>`;}).join('');
+}
+function startRename(li){
+  const s=trip.stops.find(x=>x.id===li.dataset.id);if(!s)return;
+  const box=li.querySelector('.nm');const inp=document.createElement('input');
+  inp.className='nmedit';inp.value=s.name;inp.maxLength=120;inp.setAttribute('aria-label','Tên mới');
+  box.replaceWith(inp);inp.focus();inp.select();
+  let done=false;
+  const finish=save=>{if(done)return;done=true;const v=inp.value.trim();if(save&&v&&v!==s.name){s.name=v;changed();}else renderStops();};
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();finish(true);}else if(e.key==='Escape'){e.preventDefault();finish(false);}});
+  inp.addEventListener('blur',()=>finish(true));
 }
 $('stops').addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b||b.tagName==='SELECT')return;
-  const id=b.closest('.stop').dataset.id,i=trip.stops.findIndex(s=>s.id===id);if(i<0)return;
+  const li=b.closest('.stop'),id=li.dataset.id,i=trip.stops.findIndex(s=>s.id===id);if(i<0)return;
   const act=b.dataset.act;
+  if(act==='rename'){startRename(li);return;}
   if(act==='up'&&i>0)[trip.stops[i-1],trip.stops[i]]=[trip.stops[i],trip.stops[i-1]];
   else if(act==='down'&&i<trip.stops.length-1)[trip.stops[i+1],trip.stops[i]]=[trip.stops[i],trip.stops[i+1]];
   else if(act==='del')trip.stops.splice(i,1);
@@ -450,63 +600,50 @@ $('stops').addEventListener('click',e=>{
 });
 $('stops').addEventListener('change',e=>{
   const sel=e.target.closest('select[data-act="stay"]');if(!sel)return;
-  const s=byId(sel.closest('.stop').dataset.id);if(s){s.stay=+sel.value;changed();}
+  const s=trip.stops.find(x=>x.id===sel.closest('.stop').dataset.id);if(s){s.stay=+sel.value;changed();}
 });
+const dup=p=>allStops(trip).find(s=>near(s,p));
 function addStop(p){
-  if(trip.stops.some(s=>Math.abs(s.lat-p.lat)<1e-4&&Math.abs(s.lng-p.lng)<1e-4)){toast(`“${p.name}” đã có trong danh sách.`);return;}
-  trip.stops.push({id:uid(),name:p.name,sub:p.sub||'',lat:p.lat,lng:p.lng,stay:trip.stops.length?45:0,night:false});
-  changed(true);toast(trip.stops.length===1?`Đã đặt “${p.name}” làm điểm xuất phát.`:`Đã thêm “${p.name}”.`);
+  const d=dup(p);if(d){toast(`“${d.name}” đã có trong chuyến.`);return;}
+  trip.stops.push({id:uid(),name:p.name,sub:p.sub||'',lat:p.lat,lng:p.lng,stay:45,night:false});
+  changed(true);toast(`Đã thêm “${p.name}”.`);
+}
+function setStart(p){
+  const d=trip.stops.find(s=>near(s,p));if(d){trip.stops=trip.stops.filter(s=>s!==d);}
+  trip.start={id:uid(),name:p.name,sub:p.sub||'',lat:p.lat,lng:p.lng,stay:0,night:false};
+  renderStart();changed(true);toast(`Xuất phát từ “${p.name}”.`);
 }
 function changed(fit){trip.updated=Date.now();persistSoon();renderStops();renderMap(!!fit);renderPlan();}
-[['tripName','name'],['tripDate','date'],['tripDays','days'],['dayStart','dayStart'],['maxDrive','maxDrive'],['terrain','terrain'],['endMode','end']].forEach(([id,key])=>{
-  $(id).addEventListener('input',()=>{
-    let v=$(id).value;
-    if(key==='days'){v=Math.max(1,Math.min(30,Math.round(+v)||1));}
-    if(key==='maxDrive')v=+v;
-    if(key==='dayStart'&&!v)return;
-    trip[key]=v;
-    if(key==='name')renderTripSel();
-    changed();
-  });
-});
-$('tripDays').addEventListener('change',()=>{$('tripDays').value=trip.days;});
-$('optimize').addEventListener('change',()=>{trip.optimize=$('optimize').checked;changed();});
+makeSearch($('q'),$('results'),p=>{addStop(p);map.setView([p.lat,p.lng],Math.max(map.getZoom(),10));});
+makeSearch($('fromQ'),$('fromResults'),p=>setStart(p));
+$('startChange').addEventListener('click',()=>{$('startBox').hidden=true;$('fromWrap').hidden=false;$('fromQ').focus();});
+$('fromQ').addEventListener('keydown',e=>{if(e.key==='Escape'&&trip.start&&!$('fromQ').value){renderStart();$('startChange').focus();}});
 
-/* search box (combobox) */
-const q=$('q'),res=$('results');let hits=[],sel=-1,seq=0;
-function showResults(list,msg){
-  hits=list;sel=list.length?0:-1;
-  res.innerHTML=list.length?list.map((p,i)=>`<li role="option" id="r${i}" aria-selected="${i===sel}" data-i="${i}"><b>${esc(p.name)}</b>${p.sub?`<small>${esc(p.sub)}</small>`:''}</li>`).join('')
-    :`<li class="empty" aria-disabled="true">${esc(msg||'Không tìm thấy, thử gõ tên khác hoặc bấm lên bản đồ.')}</li>`;
-  res.hidden=false;q.setAttribute('aria-expanded','true');q.setAttribute('aria-activedescendant',sel>=0?'r'+sel:'');
-}
-function hideResults(){res.hidden=true;q.setAttribute('aria-expanded','false');q.removeAttribute('aria-activedescendant');}
-const runSearch=debounce(async()=>{
-  const text=q.value.trim(),my=++seq;
-  if(text.length<2){hideResults();return;}
-  showResults([],'Đang tìm…');
-  try{const list=await searchPlaces(text);if(my===seq)showResults(list);}
-  catch(e){if(my===seq)showResults([],'Không kết nối được dịch vụ tìm kiếm. Thử lại sau, hoặc bấm lên bản đồ để thêm điểm.');}
-},350);
-q.addEventListener('input',runSearch);
-q.addEventListener('keydown',e=>{
-  if(res.hidden||!hits.length){if(e.key==='Escape')hideResults();return;}
-  if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();sel=(sel+(e.key==='ArrowDown'?1:-1)+hits.length)%hits.length;
-    res.querySelectorAll('li').forEach((li,i)=>li.setAttribute('aria-selected',String(i===sel)));q.setAttribute('aria-activedescendant','r'+sel);
-    res.querySelector(`#r${sel}`)?.scrollIntoView({block:'nearest'});}
-  else if(e.key==='Enter'){e.preventDefault();pick(sel);}
-  else if(e.key==='Escape'){hideResults();}
+$('tripName').addEventListener('input',()=>{trip.name=$('tripName').value.trim()||'Chuyến đi';renderTripSel();trip.updated=Date.now();persistSoon();});
+$('tripDate').addEventListener('change',()=>{
+  const v=$('tripDate').value;if(!v){$('tripDate').value=trip.date;return;}
+  const len=tripDays(trip);trip.date=v;
+  if(trip.endDate<v)trip.endDate=addDays(v,len-1);            /* keep the trip length when the start moves past the end */
+  $('tripEnd').value=trip.endDate;$('tripEnd').min=v;renderDaysHint();changed();
 });
-res.addEventListener('mousedown',e=>{const li=e.target.closest('li[data-i]');if(li){e.preventDefault();pick(+li.dataset.i);}});
-q.addEventListener('blur',()=>setTimeout(hideResults,150));
-function pick(i){const p=hits[i];if(!p)return;addStop(p);q.value='';hideResults();map.setView([p.lat,p.lng],Math.max(map.getZoom(),10));}
+$('tripEnd').addEventListener('change',()=>{
+  const v=$('tripEnd').value;
+  if(!v){$('tripEnd').value=trip.endDate;return;}
+  if(v<trip.date){toast('Ngày về phải sau hoặc bằng ngày đi.');$('tripEnd').value=trip.endDate;return;}
+  if(Math.round((new Date(v+'T00:00:00')-new Date(trip.date+'T00:00:00'))/864e5)+1>30){toast('Tối đa 30 ngày cho một chuyến.');$('tripEnd').value=trip.endDate;return;}
+  trip.endDate=v;renderDaysHint();changed();
+});
+$('dayStart').addEventListener('change',()=>{if($('dayStart').value){trip.dayStart=$('dayStart').value;changed();}else $('dayStart').value=trip.dayStart;});
+$('maxDrive').addEventListener('change',()=>{trip.maxDrive=+$('maxDrive').value;changed();});
+$('endMode').addEventListener('change',()=>{trip.end=$('endMode').value;changed();});
+document.querySelectorAll('input[name="orderMode"]').forEach(r=>r.addEventListener('change',()=>{trip.optimize=r.value==='auto';renderOrderHint();changed();}));
 
 /* ---------------------------------------------------------------- plan panel */
 function renderPlan(){
   const log=$('planLog'),chips=$('planChips'),banners=$('planBanners');
   const plan=trip.plan,stale=isStale();
   $('questBtn').disabled=!plan||stale;
-  if(!plan){chips.innerHTML='';banners.innerHTML='';log.innerHTML='<p class="hint">Thêm điểm rồi bấm “Lên lịch trình”, lịch từng ngày sẽ hiện ở đây.</p>';return;}
+  if(!plan){chips.innerHTML='';banners.innerHTML='';log.innerHTML='<p class="hint">Chọn nơi xuất phát, thêm điểm muốn đến rồi bấm “Lên lịch trình”. Lịch từng ngày sẽ hiện ở đây.</p>';return;}
   const drive=plan.days.reduce((a,d)=>a+d.drive,0),dist=plan.days.reduce((a,d)=>a+d.dist,0);
   chips.innerHTML=`<span class="chip">${plan.days.length} ngày</span><span class="chip">🛵 ${fmtDur(drive)}</span><span class="chip">${fmtKm(dist)}</span>`;
   banners.innerHTML=(stale?'<div class="banner">Bạn vừa sửa chuyến đi. Bấm “Lên lịch trình” để cập nhật lịch bên dưới.</div>':'')
@@ -517,13 +654,14 @@ function renderPlan(){
 }
 $('planBtn').addEventListener('click',async()=>{
   if(busy)return;
-  if(trip.stops.length<2){toast('Thêm ít nhất 2 điểm: điểm xuất phát và 1 điểm đến.');return;}
-  if(trip.stops.length>40){toast('Tối đa 40 điểm cho một chuyến.');return;}
+  if(!trip.start){toast('Chọn nơi xuất phát trước nhé.');$('fromQ').focus();return;}
+  if(!trip.stops.length){toast('Thêm ít nhất 1 điểm muốn đến.');$('q').focus();return;}
+  if(trip.stops.length>39){toast('Tối đa 39 điểm đến cho một chuyến.');return;}
   busy=true;const b=$('planBtn');b.disabled=true;b.textContent='Đang tính đường…';
   try{
     const plan=await buildPlan(trip);
-    if(trip.optimize){                                         /* show the stops in the order they will be visited */
-      const order=[trip.stops[0].id,...plan.days.flatMap(d=>d.rows.filter(r=>!r.ret).map(r=>r.id))];
+    if(trip.optimize){                                         /* list the stops in the order they will be visited */
+      const order=plan.days.flatMap(d=>d.rows.filter(r=>!r.ret).map(r=>r.id));
       trip.stops.sort((a,c)=>order.indexOf(a.id)-order.indexOf(c.id));plan.sig=planSig(trip);
     }
     trip.plan=plan;trip.updated=Date.now();persist();
@@ -560,10 +698,12 @@ async function unpack(s){
   if(kind==='z'){const buf=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();return JSON.parse(new TextDecoder().decode(buf));}
   return JSON.parse(new TextDecoder().decode(bytes));
 }
+const packStop=s=>[s.name,s.sub,+(+s.lat).toFixed(5),+(+s.lng).toFixed(5),s.stay,s.night?1:0];
+const unpackStop=a=>({id:uid(),name:String(a[0]||'Điểm').slice(0,120),sub:String(a[1]||'').slice(0,160),lat:+a[2],lng:+a[3],stay:Math.max(0,Math.min(720,+a[4]||0)),night:!!a[5]});
 $('shareBtn').addEventListener('click',async()=>{
-  if(!trip.stops.length){toast('Chuyến này chưa có điểm nào để chia sẻ.');return;}
-  const data={v:1,name:trip.name,date:trip.date,days:trip.days,dayStart:trip.dayStart,maxDrive:trip.maxDrive,terrain:trip.terrain,end:trip.end,optimize:trip.optimize,
-    stops:trip.stops.map(s=>[s.name,s.sub,+s.lat.toFixed(5),+s.lng.toFixed(5),s.stay,s.night?1:0])};
+  if(!trip.start&&!trip.stops.length){toast('Chuyến này chưa có điểm nào để chia sẻ.');return;}
+  const data={v:2,name:trip.name,date:trip.date,endDate:trip.endDate,dayStart:trip.dayStart,maxDrive:trip.maxDrive,end:trip.end,optimize:trip.optimize,
+    start:trip.start?packStop(trip.start):null,stops:trip.stops.map(packStop)};
   const url=location.href.split('#')[0]+'#t='+await pack(data);
   try{
     if(navigator.share&&window.matchMedia('(pointer:coarse)').matches){await navigator.share({title:trip.name,text:`Lịch trình “${trip.name}” trên Việt Nam Quest`,url});return;}
@@ -572,15 +712,18 @@ $('shareBtn').addEventListener('click',async()=>{
 });
 async function importFromHash(){
   const m=location.hash.match(/^#t=([A-Za-z0-9_-]+)/);if(!m)return null;
+  history.replaceState(null,'',location.pathname+location.search);
   try{
     const d=await unpack(m[1]);
-    const t={id:uid(),name:String(d.name||'Chuyến được chia sẻ').slice(0,80),date:d.date||'',days:+d.days||1,dayStart:d.dayStart||'07:30',maxDrive:+d.maxDrive||5,
-      terrain:d.terrain==='mountain'?'mountain':'plain',end:d.end==='loop'?'loop':'free',optimize:d.optimize!==false,
-      stops:(d.stops||[]).slice(0,40).map(a=>({id:uid(),name:String(a[0]||'Điểm').slice(0,120),sub:String(a[1]||'').slice(0,160),lat:+a[2],lng:+a[3],stay:+a[4]||0,night:!!a[5]}))
-        .filter(s=>isFinite(s.lat)&&isFinite(s.lng))};
-    history.replaceState(null,'',location.pathname+location.search);
-    return t;
-  }catch(e){toast('Link chia sẻ bị hỏng hoặc thiếu, không mở được.');history.replaceState(null,'',location.pathname+location.search);return null;}
+    let stops=(d.stops||[]).slice(0,40).map(unpackStop).filter(s=>isFinite(s.lat)&&isFinite(s.lng));
+    let start=d.start?unpackStop(d.start):null;
+    if(d.v!==2&&!start&&stops.length)start=stops.shift();          /* v1 links: the first stop was the start */
+    if(start)start.stay=0;
+    const date=/^\d{4}-\d{2}-\d{2}$/.test(d.date||'')?d.date:addDays(isoDate(new Date()),7);
+    const endDate=/^\d{4}-\d{2}-\d{2}$/.test(d.endDate||'')&&d.endDate>=date?d.endDate:addDays(date,Math.max(1,Math.min(30,+d.days||1))-1);
+    return normalizeTrip({id:uid(),name:String(d.name||'Chuyến được chia sẻ').slice(0,80),date,endDate,dayStart:/^\d{2}:\d{2}$/.test(d.dayStart||'')?d.dayStart:'07:30',
+      maxDrive:+d.maxDrive||5,end:d.end==='free'?'free':'loop',optimize:d.optimize!==false,start,stops});
+  }catch(e){toast('Link chia sẻ bị hỏng hoặc thiếu, không mở được.');return null;}
 }
 
 /* ---------------------------------------------------------------- boot */
@@ -588,12 +731,12 @@ async function importFromHash(){
   if(!trips.length){trips.push(sampleHaGiang());persist();}
   const shared=await importFromHash();
   if(shared){trips.unshift(shared);persist();useTrip(shared);toast(`Đã mở chuyến “${shared.name}” được chia sẻ và lưu vào máy bạn.`);
-    if(shared.stops.length>1)$('planBtn').click();return;}
-  const cur=trips.find(t=>t.id===store.cur())||trips[0];
-  useTrip(cur);
+    if(shared.start&&shared.stops.length)$('planBtn').click();return;}
+  persist();                                                    /* save any migrated old trips */
+  useTrip(trips.find(t=>t.id===store.cur())||trips[0]);
 })();
 
 /* used by quest.js */
-window.VNQ={getTrip:()=>trip,isStale,dayColor,dayLabel,fmtDur,fmtKm,fmtClock,esc,renderPassport,passportStamps,toast};
+window.VNQ={getTrip:()=>trip,isStale,dayColor,dayLabel,fmtDur,fmtKm,fmtClock,esc,renderPassport,passportStamps,toast,allStops,stopById};
 $('questBtn').addEventListener('click',()=>{if(trip.plan&&!isStale()&&window.Quest)window.Quest.open(trip,trip.plan);});
 })();
