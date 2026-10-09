@@ -207,6 +207,13 @@ $('qReplay').addEventListener('click',()=>{jump(0);setAuto(true);Q.timer=setTime
 document.addEventListener('keydown',e=>{
   if(!Q||ov.hidden)return;
   if(e.key==='Escape'){e.preventDefault();close();}
+  else if(e.key==='Tab'){                                     /* aria-modal: keep focus inside the dialog */
+    const f=[...ov.querySelectorAll('button,[href],select,input,[tabindex]:not([tabindex="-1"])')].filter(x=>!x.disabled&&x.offsetParent);
+    if(!f.length)return;const a=f[0],z=f[f.length-1];
+    if(!ov.contains(document.activeElement)){e.preventDefault();a.focus();}
+    else if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus();}
+    else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus();}
+  }
   else if(e.key==='ArrowRight'&&!e.target.closest('select,input')){e.preventDefault();stopAuto();next();}
   else if(e.key==='ArrowLeft'&&!e.target.closest('select,input')){e.preventDefault();if(!Q.moving){stopAuto();jump(Q.cur-1);}}
 });

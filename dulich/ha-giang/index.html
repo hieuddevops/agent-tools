@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=Patrick+Hand&display=swap">
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script>window.gsap||document.write('<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"><\/script>')</script>
 <style>
@@ -429,6 +429,9 @@ const G=window.gsap||null;
 const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $=id=>document.getElementById(id);
 const svg=$('map');
+/* Safari < 16 has no canvas roundRect (mini-game + passport image); a plain rect is close enough there */
+if(window.CanvasRenderingContext2D&&!CanvasRenderingContext2D.prototype.roundRect)
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h){this.rect(x,y,w,h);};
 
 /* ---------- Data ---------- */
 const DAYS={
@@ -907,7 +910,7 @@ function travel(i){
   const s=STOPS[i],info=legInfo[i];
   clearTimeout(autoTimer);hideAllVillagers();hideBubble();boat.setAttribute('opacity',0);
   moving=true;updateControls();
-  if(s.night||s.dawn)setSky(null);else setSky(null);
+  setSky(null);
   for(let k=i;k<STOPS.length;k++)setTrail(k,0);
   const useBus=!!s.bus;
   if(useBus){bus.classList.add('driving');}else{couple.classList.remove('waving');couple.classList.add('walking');}
@@ -935,8 +938,7 @@ function finale(){
   hideAllVillagers();hideBubble();
   const a=NODES.A;placeBus(a.x+10,a.y);faceBus(-1);pop(busPop,true);
   setTimeout(()=>{pop(couplePop,false);},350);
-  const info={segs:[{road:'R0',from:nodeLen('R0','A'),to:0}],total:nodeLen('R0','A')+40};
-  info.segs[0].to=0;info.total=nodeLen('R0','A');
+  const info={segs:[{road:'R0',from:nodeLen('R0','A'),to:0}],total:nodeLen('R0','A')};
   setTimeout(()=>{
     bus.classList.add('driving');
     motion=rafTween(reduce?0:1600,p=>{const q=legPoint(info,p*info.total);placeBus(q.x,q.y);follow(q.x);},()=>{

@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=Patrick+Hand&display=swap">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
 :root{
   --ink:#1d2160;--night:#20245e;--paper:#fff;--pink:#ff4f9a;--teal:#11b3ae;--sun:#ffc531;--orange:#ff8a1f;--red:#e8423f;--violet:#7a6cf0;--muted:#5b5f8f;
@@ -102,7 +102,7 @@ button,input,select{font:inherit}
 .num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-display);font-weight:800;font-size:13px;color:#fff;background:var(--violet);border:2.5px solid var(--ink);transform:rotate(-8deg)}
 .stop .nm{font-weight:700;font-size:14px;line-height:1.25;overflow-wrap:anywhere}
 .stop .sb{font-size:12px;color:var(--muted);line-height:1.3;overflow-wrap:anywhere}
-.stop .tag{display:inline-block;font-family:var(--font-display);font-weight:800;font-size:11px;padding:2px 8px 0;border-radius:999px;background:var(--sun);border:2px solid var(--ink);margin-bottom:2px}
+.stop .autotag{display:inline-block;font-family:var(--font-display);font-weight:800;font-size:11px;line-height:1.3;padding:1px 7px 0;border-radius:999px;background:var(--sun);border:2px solid var(--ink);margin-left:6px;vertical-align:1px}
 .stop .ctl{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;align-items:center}
 .stop .opts{grid-column:2 / 4;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .stop select{padding:4px 6px;border:2px solid var(--ink);border-radius:9px;background:#fff;color:var(--ink);font-size:13px}
@@ -125,7 +125,8 @@ button,input,select{font:inherit}
 .results .tips{cursor:default;font-size:12.5px;color:var(--muted);line-height:1.45}
 .results .tips:hover{background:transparent}
 .nmedit{width:100%;padding:4px 8px;border:2px solid var(--ink);border-radius:8px;font-weight:700;font-size:14px;color:var(--ink)}
-.dayhead{list-style:none;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;justify-content:space-between;margin:8px 0 0;padding:0 2px;font-family:var(--font-display);font-weight:800;font-size:15px;color:var(--dc,var(--ink))}font-size:14px;color:var(--muted);margin:0;padding:12px;border:2px dashed #d9dbf0;border-radius:14px;text-align:center}
+.dayhead{list-style:none;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;justify-content:space-between;margin:8px 0 0;padding:0 2px;font-family:var(--font-display);font-weight:800;font-size:15px;color:var(--dc,var(--ink))}
+.dayempty{list-style:none;font-size:14px;color:var(--muted);margin:0;padding:12px;border:2px dashed #d9dbf0;border-radius:14px;text-align:center}
 
 /* passport (itinerary) — same look as the Hà Giang Quest passport */
 .passhead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
@@ -344,7 +345,7 @@ button,input,select{font:inherit}
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="places.js"></script>
 <script src="app.js"></script>
 <script src="quest.js"></script>
