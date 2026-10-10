@@ -477,7 +477,7 @@ async function buildPlan(t){
     prevIdx=g[g.length-1].idx;
   }
   days.forEach((d,i)=>{
-    if(d.free&&!(i===days.length-1&&t.end!=='loop'))warnings.push(`${dayLabel(t,i).split(' · ')[0]} chưa có điểm nào (ngày tự do). Chọn “Thêm điểm vào: ${dayLabel(t,i).split(' · ')[0]}” để điền.`);
+    if(d.free&&!(i===days.length-1&&t.end!=='loop'))warnings.push(`${dayLabel(t,i).split(' · ')[0]} chưa có điểm nào (ngày tự do). Bấm “＋ Thêm điểm” ở ${dayLabel(t,i).split(' · ')[0]} để điền.`);
     if(d.over)warnings.push(`${dayLabel(t,i).split(' · ')[0]}: chạy xe khoảng ${fmtDur(d.drive)}, quá mức ${fmtDur(maxD)} bạn đặt.`);
     else if(d.late)warnings.push(`${dayLabel(t,i).split(' · ')[0]}: tới nơi cuối khoảng ${fmtClock(d.end)}, khá muộn.`);
   });
@@ -627,7 +627,7 @@ function renderAddDay(){
   sel.innerHTML=`<option value="auto">🧭 App tự xếp vào ngày hợp lý</option>`+[...Array(K)].map((_,d)=>`<option value="${d}">${esc(dayLabel(trip,d))}</option>`).join('');
   sel.value=addTo;
 }
-$('addDay').addEventListener('change',()=>{addTo=$('addDay').value;});
+$('addDay').addEventListener('change',()=>{addTo=$('addDay').value;renderStops();});
 function renderStart(){
   const s=trip.start;
   $('startBox').hidden=!s;$('fromWrap').hidden=!!s;
@@ -666,9 +666,10 @@ function renderStops(){
   };
   let html='';
   groups.forEach((list,d)=>{
-    html+=`<li class="dayhead" style="--dc:${dayColor(d)}"><span>${esc(dayLabel(trip,d))}</span><small>${list.length?`${list.length} điểm`:''}</small></li>`;
+    const on=addTo===String(d);
+    html+=`<li class="dayhead${on?' on':''}" style="--dc:${dayColor(d)}"><span>${esc(dayLabel(trip,d))}</span><small>${list.length?`${list.length} điểm · `:''}<button class="addday" type="button" data-addday="${d}" aria-pressed="${on}">${on?'✓ Đang thêm vào đây':'＋ Thêm điểm'}</button></small></li>`;
     html+=list.length?list.map((s,i)=>item(s,list,i)).join('')
-      :`<li class="dayempty">Chưa có điểm. Chọn “Thêm điểm vào: Ngày ${d+1}” rồi tìm địa điểm${d===0?'':', hoặc để app tự xếp'}.</li>`;
+      :`<li class="dayempty" style="--dc:${dayColor(d)}"><button type="button" data-addday="${d}">${on?'Gõ tên địa điểm ở ô tìm kiếm phía trên, hoặc bấm lên bản đồ.':`＋ Thêm điểm cho Ngày ${d+1}`}</button></li>`;
   });
   if(pool.length){
     html+=`<li class="dayhead" style="--dc:var(--muted)"><span>🧭 App tự xếp ngày</span><small>${pool.length} điểm</small></li>`;
@@ -693,6 +694,13 @@ function startRename(li){
   inp.addEventListener('blur',()=>finish(true));
 }
 $('stops').addEventListener('click',e=>{
+  const ad=e.target.closest('[data-addday]');
+  if(ad){
+    addTo=addTo===ad.dataset.addday?'auto':ad.dataset.addday;
+    renderStops();
+    if(addTo!=='auto'){const q=$('q');q.scrollIntoView({behavior:'smooth',block:'center'});q.focus({preventScroll:true});}
+    return;
+  }
   const b=e.target.closest('[data-act]');if(!b||b.tagName==='SELECT')return;
   const li=b.closest('.stop'),id=li.dataset.id,i=trip.stops.findIndex(s=>s.id===id);if(i<0)return;
   const act=b.dataset.act;
